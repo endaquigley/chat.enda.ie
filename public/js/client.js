@@ -226,13 +226,13 @@ const buttons = {
         showShareVideoAudioBtn: true,
         showPrivateMessageBtn: true,
         showZoomInOutBtn: false,
-        showVideoPipBtn: showVideoPipBtn,
+        showVideoPipBtn: false,
     },
     local: {
         showSnapShotBtn: true,
         showVideoCircleBtn: true,
         showZoomInOutBtn: false,
-        showVideoPipBtn: showVideoPipBtn,
+        showVideoPipBtn: false,
     },
     whiteboard: {
         whiteboardLockBtn: false,
@@ -273,7 +273,7 @@ let initEnumerateDevicesFailed = false; // Check if user webcam and audio init i
 
 let isVideoPrivacyActive = false; // Video circle for privacy
 
-let surveyActive = true; // when leaving the room give a feedback, if false will be redirected to newcall page
+let surveyActive = false; // when leaving the room give a feedback, if false will be redirected to newcall page
 
 let surveyURL = 'https://www.questionpro.com/t/AUs7VZq00L';
 

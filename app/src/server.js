@@ -269,7 +269,7 @@ app.get(['/'], (req, res) => {
         hostCfg.authenticated = false;
         res.sendFile(views.login);
     } else {
-        res.sendFile(views.landing);
+        res.redirect('/join/boardgames');
     }
 });
 
@@ -283,13 +283,13 @@ app.get(['/newcall'], (req, res) => {
     if (hostCfg.protected) {
         const ip = getIP(req);
         if (allowedIP(ip)) {
-            res.sendFile(views.newCall);
+            res.redirect('/join/boardgames');
         } else {
             hostCfg.authenticated = false;
             res.sendFile(views.login);
         }
     } else {
-        res.sendFile(views.newCall);
+        res.redirect('/join/boardgames');
     }
 });
 
@@ -325,17 +325,17 @@ app.get('/join/', (req, res) => {
         // if (room && name && audio && video && screen && notify) {
         if (room) {
             // only room mandatory
-            return res.sendFile(views.client);
+            res.redirect('/join/boardgames');
         }
     }
     if (hostCfg.protected) {
         return res.sendFile(views.login);
     }
-    res.redirect('/');
+    res.redirect('/join/boardgames');
 });
 
 // Join Room by id
-app.get('/join/:roomId', function (req, res) {
+app.get('/join/boardgames', function (req, res) {
     // log.debug('Join to room', { roomId: req.params.roomId });
     if (hostCfg.authenticated) {
         res.sendFile(views.client);
@@ -343,20 +343,20 @@ app.get('/join/:roomId', function (req, res) {
         if (hostCfg.protected) {
             return res.sendFile(views.login);
         }
-        res.redirect('/');
+        res.redirect('/join/boardgames');
     }
 });
 
 // Not specified correctly the room id
 app.get('/join/*', function (req, res) {
-    res.redirect('/');
+    res.redirect('/join/boardgames');
 });
 
 // logged
 app.get(['/logged'], (req, res) => {
     const ip = getIP(req);
     if (allowedIP(ip)) {
-        res.sendFile(views.landing);
+        res.redirect('/join/boardgames');
     } else {
         hostCfg.authenticated = false;
         res.sendFile(views.login);
@@ -465,7 +465,7 @@ function getMeetingURL(host) {
 
 // not match any of page before, so 404 not found
 app.get('*', function (req, res) {
-    res.sendFile(views.notFound);
+    res.redirect('/join/boardgames');
 });
 
 /**
