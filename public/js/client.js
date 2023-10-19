@@ -1346,7 +1346,7 @@ async function whoAreYou() {
         allowOutsideClick: false,
         allowEscapeKey: false,
         background: swalBackground,
-        title: 'MiroTalk P2P',
+        title: 'Boardgame Chat',
         position: 'center',
         input: 'text',
         inputPlaceholder: 'Enter your name',
