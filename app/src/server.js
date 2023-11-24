@@ -347,7 +347,7 @@ app.get('/join/', (req, res) => {
             // only room mandatory
             return res.redirect('/join/boardgames');
         } else {
-            return res.redirect('/join/boardgames');
+            return res.sendFile(views.login);
         }
     }
     if (hostCfg.protected) {
