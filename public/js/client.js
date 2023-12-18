@@ -15,7 +15,7 @@
  * @license For commercial use or closed source, contact us at license.mirotalk@gmail.com or purchase directly from CodeCanyon
  * @license CodeCanyon: https://codecanyon.net/item/mirotalk-p2p-webrtc-realtime-video-conferences/38376661
  * @author  Miroslav Pejic - miroslav.pejic.85@gmail.com
- * @version 1.2.6
+ * @version 1.2.62
  *
  */
 
@@ -382,6 +382,8 @@ const recordingTime = getId('recordingTime');
 const lastRecordingInfo = getId('lastRecordingInfo');
 const themeSelect = getId('mirotalkTheme');
 const videoObjFitSelect = getId('videoObjFitSelect');
+const mainButtonsBar = getQsA('#buttonsBar button');
+const mainButtonsIcon = getQsA('#buttonsBar button i');
 const btnsBarSelect = getId('mainButtonsBarPosition');
 const pinUnpinGridDiv = getId('pinUnpinGridDiv');
 const pinVideoPositionSelect = getId('pinVideoPositionSelect');
@@ -4684,6 +4686,7 @@ function setupMySettings() {
             lsSettings.buttons_bar = btnsBarSelect.selectedIndex;
             lS.setSettings(lsSettings);
             setButtonsBarPosition(btnsBarSelect.value);
+            resizeMainButtons();
         });
     }
 
@@ -4754,6 +4757,7 @@ function loadSettingsFromLocalStorage() {
     setSP('--video-object-fit', videoObjFitSelect.value);
     setButtonsBarPosition(btnsBarSelect.value);
     toggleVideoPin(pinVideoPositionSelect.value);
+    resizeMainButtons();
 }
 
 /**
@@ -9589,6 +9593,15 @@ function isIpad(userAgent) {
  */
 function getId(id) {
     return document.getElementById(id);
+}
+
+/**
+ * Get all element descendants of node
+ * @param {string} selectors
+ * @returns all element descendants of node that match selectors.
+ */
+function getQsA(selectors) {
+    return document.querySelectorAll(selectors);
 }
 
 /**
