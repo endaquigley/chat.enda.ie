@@ -474,11 +474,11 @@ app.get(['/'], OIDCAuth, (req, res) => {
     if ((!OIDC.enabled && hostCfg.protected && !hostCfg.authenticated) || authHost.isRoomActive()) {
         const ip = getIP(req);
         if (allowedIP(ip)) {
-            res.sendFile(views.landing);
+            res.redirect('/join/boardgames');
             hostCfg.authenticated = true;
         } else {
             hostCfg.authenticated = false;
-            res.sendFile(views.login);
+            res.redirect('/join/boardgames');
         }
     } else {
         res.redirect('/join/boardgames');
@@ -491,9 +491,10 @@ app.get(['/newcall'], OIDCAuth, (req, res) => {
         const ip = getIP(req);
         if (allowedIP(ip)) {
             res.redirect('/join/boardgames');
+            hostCfg.authenticated = true;
         } else {
             hostCfg.authenticated = false;
-            res.sendFile(views.login);
+            res.redirect('/join/boardgames');
         }
     } else {
         res.redirect('/join/boardgames');
@@ -590,7 +591,7 @@ app.get('/join/', async (req, res) => {
             // only room mandatory
             return res.redirect('/join/boardgames');
         } else {
-            return res.sendFile(views.login);
+            return res.redirect('/join/boardgames');
         }
     }
 });
@@ -606,7 +607,7 @@ app.get('/join/boardgames', function (req, res) {
         res.redirect('/join/boardgames');
     } else {
         if (!OIDC.enabled && hostCfg.protected) {
-            return res.sendFile(views.login);
+            return res.redirect('/join/boardgames');
         }
         res.redirect('/join/boardgames');
     }
@@ -619,7 +620,7 @@ app.get('/join/*', function (req, res) {
 
 // Login
 app.get(['/login'], (req, res) => {
-    res.sendFile(views.login);
+    res.redirect('/join/boardgames');
 });
 
 // Logged
@@ -629,7 +630,7 @@ app.get(['/logged'], (req, res) => {
         res.redirect('/join/boardgames');
     } else {
         hostCfg.authenticated = false;
-        res.sendFile(views.login);
+        res.redirect('/join/boardgames');
     }
 });
 
