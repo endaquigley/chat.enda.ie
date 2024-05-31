@@ -1,6 +1,8 @@
-'use-strict';
+'use strict';
 
 // https://codepen.io/tutsplus/pen/BaVqjvg
+
+const snowEnabled = false;
 
 const snowContainer = document.getElementById('snow-container');
 
@@ -20,7 +22,7 @@ const getRandomStyles = () => {
     left: ${left}%;
     font-size: ${size}px;
     animation-duration: ${dur}s;
-  `;
+    `;
 };
 
 const createSnow = (num) => {
@@ -41,10 +43,12 @@ const removeSnow = () => {
 };
 
 window.addEventListener('load', () => {
+    if (!snowEnabled) return;
     createSnow(30);
     setTimeout(removeSnow, 1000 * 60);
 });
 
 window.addEventListener('click', () => {
+    if (!snowEnabled) return;
     removeSnow();
 });

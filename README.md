@@ -29,10 +29,11 @@
 
 <br/>
 
--   Is `100% Free` - `Open Source (AGPLv3)` - `Self Hosted` and [PWA](https://en.wikipedia.org/wiki/Progressive_web_application)!
+-   Is `100% Free` - `Open Source under (AGPLv3)` - `Self Hosted` and [PWA](https://en.wikipedia.org/wiki/Progressive_web_application)!
 -   No downloads, plugins, or logins required – completely browser-based.
 -   Unlimited conference rooms with no time limitations.
 -   Translated into 133 languages.
+-   Support for the OpenID Connect (OIDC) authentication layer.
 -   Host protection to prevent unauthorized access.
 -   User auth to prevent unauthorized access.
 -   Room password protection.
@@ -337,6 +338,7 @@ Do you find MiroTalk P2P indispensable for your needs? Join us in supporting thi
 | [![BroadcastX](public/sponsors/BroadcastX.png)](https://broadcastx.de/)           | [![Hetzner](public/sponsors/HetznerLogo.png)](https://hetzner.cloud/?ref=XdRifCzCK3bn) |
 | [![LuvLounge](public/sponsors/LuvLounge.png)](https://luvlounge.ca)               | [![QuestionPro](public/sponsors/QuestionPro.png)](https://www.questionpro.com)         |
 | [![BrowserStack](public/sponsors/BrowserStack.png)](https://www.browserstack.com) | [![CrystalSound](public/sponsors/CrystalSound.png)](https://crystalsound.ai)           |
+| [![Cloudron](public/sponsors/Cloudron.png)](https://cloudron.io)                  | [![Kiquix](public/sponsors/KiquixLogo.png)](https://kiquix.com)                        |
 
 </details>
 
