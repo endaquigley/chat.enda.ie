@@ -474,14 +474,14 @@ app.get(['/'], OIDCAuth, (req, res) => {
     if ((!OIDC.enabled && hostCfg.protected && !hostCfg.authenticated) || authHost.isRoomActive()) {
         const ip = getIP(req);
         if (allowedIP(ip)) {
-            res.sendFile(views.landing);
+            res.redirect('/join/boardgames');
             hostCfg.authenticated = true;
         } else {
             hostCfg.authenticated = false;
-            res.sendFile(views.login);
+            res.redirect('/join/boardgames');
         }
     } else {
-        res.sendFile(views.landing);
+        res.redirect('/join/boardgames');
     }
 });
 
@@ -490,14 +490,14 @@ app.get(['/newcall'], OIDCAuth, (req, res) => {
     if ((!OIDC.enabled && hostCfg.protected && !hostCfg.authenticated) || authHost.isRoomActive()) {
         const ip = getIP(req);
         if (allowedIP(ip)) {
-            res.sendFile(views.newCall);
+            res.redirect('/join/boardgames');
             hostCfg.authenticated = true;
         } else {
             hostCfg.authenticated = false;
-            res.sendFile(views.login);
+            res.redirect('/join/boardgames');
         }
     } else {
-        res.sendFile(views.newCall);
+        res.redirect('/join/boardgames');
     }
 });
 
@@ -589,17 +589,17 @@ app.get('/join/', async (req, res) => {
         // Check if peer authenticated or valid
         if (room && (hostCfg.authenticated || isPeerValid)) {
             // only room mandatory
-            return res.sendFile(views.client);
+            return res.redirect('/join/boardgames');
         } else {
-            return res.sendFile(views.login);
+            return res.redirect('/join/boardgames');
         }
     }
 });
 
 // Join Room by id
-app.get('/join/:roomId', function (req, res) {
+app.get('/join/boardgames', function (req, res) {
     //
-    const allowRoomAccess = isAllowedRoomAccess('/join/:roomId', req, hostCfg, authHost, peers, req.params.roomId);
+    const allowRoomAccess = isAllowedRoomAccess('/join/boardgames', req, hostCfg, authHost, peers, req.params.roomId);
 
     if (allowRoomAccess) {
         if (hostCfg.protected) authHost.setRoomActive();
@@ -607,30 +607,30 @@ app.get('/join/:roomId', function (req, res) {
         res.sendFile(views.client);
     } else {
         if (!OIDC.enabled && hostCfg.protected) {
-            return res.sendFile(views.login);
+            return res.redirect('/join/boardgames');
         }
-        res.redirect('/');
+        res.redirect('/join/boardgames');
     }
 });
 
 // Not specified correctly the room id
 app.get('/join/*', function (req, res) {
-    res.redirect('/');
+    res.redirect('/join/boardgames');
 });
 
 // Login
 app.get(['/login'], (req, res) => {
-    res.sendFile(views.login);
+    res.redirect('/join/boardgames');
 });
 
 // Logged
 app.get(['/logged'], (req, res) => {
     const ip = getIP(req);
     if (allowedIP(ip)) {
-        res.sendFile(views.landing);
+        res.redirect('/join/boardgames');
     } else {
         hostCfg.authenticated = false;
-        res.sendFile(views.login);
+        res.redirect('/join/boardgames');
     }
 });
 
@@ -839,7 +839,7 @@ function getMeetingURL(host) {
 
 // not match any of page before, so 404 not found
 app.get('*', function (req, res) {
-    res.sendFile(views.notFound);
+    res.redirect('/join/boardgames');
 });
 
 /**
