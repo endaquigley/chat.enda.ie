@@ -1,3 +1,5 @@
+name: mirotalk
+
 services:
     mirotalk:
         image: mirotalk/p2p:latest
