@@ -15,7 +15,7 @@
  * @license For commercial use or closed source, contact us at license.mirotalk@gmail.com or purchase directly from CodeCanyon
  * @license CodeCanyon: https://codecanyon.net/item/mirotalk-p2p-webrtc-realtime-video-conferences/38376661
  * @author  Miroslav Pejic - miroslav.pejic.85@gmail.com
- * @version 1.3.32
+ * @version 1.3.75
  *
  */
 
@@ -85,6 +85,7 @@ const className = {
     speech: 'fas fa-volume-high',
     heart: 'fas fa-heart',
     pip: 'fas fa-images',
+    hideAll: 'fas fa-eye',
 };
 // https://fontawesome.com/search?o=r&m=free
 
@@ -106,10 +107,11 @@ const fileSharingInput = '*'; // allow all file extensions
 const Base64Prefix = 'data:application/pdf;base64,';
 const wbPdfInput = 'application/pdf';
 const wbImageInput = 'image/*';
-const wbWidth = 1200;
-const wbHeight = 600;
+const wbWidth = 1280;
+const wbHeight = 768;
 
 // Peer infos
+const extraInfo = getId('extraInfo');
 const userAgent = navigator.userAgent.toLowerCase();
 const detectRtcVersion = DetectRTC.version;
 const isWebRTCSupported = DetectRTC.isWebRTCSupported;
@@ -122,6 +124,7 @@ const osVersion = DetectRTC.osVersion;
 const browserName = DetectRTC.browser.name;
 const browserVersion = DetectRTC.browser.version;
 const peerInfo = getPeerInfo();
+const thisInfo = getInfo();
 
 // Local Storage class
 const lS = new LocalStorage();
@@ -156,12 +159,14 @@ const buttons = {
         showRoomEmojiPickerBtn: true,
         showMyHandBtn: true,
         showWhiteboardBtn: true,
+        showSnapshotRoomBtn: true,
         showFileShareBtn: true,
         showDocumentPipBtn: showDocumentPipBtn,
         showMySettingsBtn: true,
         showAboutBtn: true, // Please keep me always true, Thank you!
     },
     chat: {
+        showTogglePinBtn: true,
         showMaxBtn: true,
         showSaveMessageBtn: true,
         showMarkDownBtn: true,
@@ -171,6 +176,7 @@ const buttons = {
         showParticipantsBtn: true,
     },
     caption: {
+        showTogglePinBtn: true,
         showMaxBtn: true,
     },
     settings: {
@@ -195,6 +201,7 @@ const buttons = {
         showShareVideoAudioBtn: true,
         showPrivateMessageBtn: true,
         showZoomInOutBtn: false,
+        showVideoFocusBtn: true,
         showVideoPipBtn: false,
     },
     local: {
@@ -230,6 +237,7 @@ const initSpeakerSelect = getId('initSpeakerSelect');
 
 // Buttons bar
 const buttonsBar = getId('buttonsBar');
+const bottomButtons = getId('bottomButtons');
 const shareRoomBtn = getId('shareRoomBtn');
 const hideMeBtn = getId('hideMeBtn');
 const videoBtn = getId('videoBtn');
@@ -243,6 +251,7 @@ const captionBtn = getId('captionBtn');
 const roomEmojiPickerBtn = getId('roomEmojiPickerBtn');
 const myHandBtn = getId('myHandBtn');
 const whiteboardBtn = getId('whiteboardBtn');
+const snapshotRoomBtn = getId('snapshotRoomBtn');
 const fileShareBtn = getId('fileShareBtn');
 const documentPiPBtn = getId('documentPiPBtn');
 const mySettingsBtn = getId('mySettingsBtn');
@@ -258,8 +267,11 @@ const userEmoji = getId(`userEmoji`);
 // Chat room
 const msgerDraggable = getId('msgerDraggable');
 const msgerHeader = getId('msgerHeader');
+const msgerTogglePin = getId('msgerTogglePin');
 const msgerTheme = getId('msgerTheme');
 const msgerCPBtn = getId('msgerCPBtn');
+const msgerDropDownMenuBtn = getId('msgerDropDownMenuBtn');
+const msgerDropDownContent = getId('msgerDropDownContent');
 const msgerClean = getId('msgerClean');
 const msgerSaveBtn = getId('msgerSaveBtn');
 const msgerClose = getId('msgerClose');
@@ -342,6 +354,7 @@ const searchPeerBarName = getId('searchPeerBarName');
 // Caption section
 const captionDraggable = getId('captionDraggable');
 const captionHeader = getId('captionHeader');
+const captionTogglePin = getId('captionTogglePin');
 const captionTheme = getId('captionTheme');
 const captionMaxBtn = getId('captionMaxBtn');
 const captionMinBtn = getId('captionMinBtn');
@@ -418,7 +431,7 @@ const micLatencyRange = getId('micLatencyRange');
 const micVolumeRange = getId('micVolumeRange');
 const applyAudioOptionsBtn = getId('applyAudioOptionsBtn');
 const micOptionsBtn = getId('micOptionsBtn');
-const micDropDownMenu = getSl('.dropdown-menu');
+const micDropDownMenu = getId('micDropDownMenu');
 const micLatencyValue = getId('micLatencyValue');
 const micVolumeValue = getId('micVolumeValue');
 
@@ -437,6 +450,8 @@ const whiteboardPencilBtn = getId('whiteboardPencilBtn');
 const whiteboardObjectBtn = getId('whiteboardObjectBtn');
 const whiteboardUndoBtn = getId('whiteboardUndoBtn');
 const whiteboardRedoBtn = getId('whiteboardRedoBtn');
+const whiteboardDropDownMenuBtn = getId('whiteboardDropDownMenuBtn');
+const whiteboardDropdownMenu = getId('whiteboardDropdownMenu');
 const whiteboardImgFileBtn = getId('whiteboardImgFileBtn');
 const whiteboardPdfFileBtn = getId('whiteboardPdfFileBtn');
 const whiteboardImgUrlBtn = getId('whiteboardImgUrlBtn');
@@ -449,6 +464,7 @@ const whiteboardSaveBtn = getId('whiteboardSaveBtn');
 const whiteboardEraserBtn = getId('whiteboardEraserBtn');
 const whiteboardCleanBtn = getId('whiteboardCleanBtn');
 const whiteboardLockBtn = getId('whiteboardLockBtn');
+const whiteboardUnlockBtn = getId('whiteboardUnlockBtn');
 const whiteboardCloseBtn = getId('whiteboardCloseBtn');
 
 // Room actions buttons
@@ -473,6 +489,7 @@ const receiveFilePercentage = getId('receiveFilePercentage');
 const receiveFileInfo = getId('receiveFileInfo');
 const receiveProgress = getId('receiveProgress');
 const receiveHideBtn = getId('receiveHideBtn');
+const receiveAbortBtn = getId('receiveAbortBtn');
 
 // Video/audio url player
 const videoUrlCont = getId('videoUrlCont');
@@ -500,7 +517,7 @@ const userLimits = {
 };
 
 const isRulesActive = true; // Presenter can do anything, guest is slightly moderate, if false no Rules for the room.
-const forceCamMaxResolutionAndFps = false; // This force the webCam to max resolution as default, up to 4k and 60fps (very high bandwidth are required) if false, you can set it from settings
+const forceCamMaxResolutionAndFps = false; // This force the webCam to max resolution as default, up to 8k and 60fps (very high bandwidth are required) if false, you can set it from settings
 const useAvatarSvg = true; // if false the cam-Off avatar = images.avatar
 
 /**
@@ -607,9 +624,10 @@ let localAudioMediaStream; // my microphone
 let peerVideoMediaElements = {}; // keep track of our peer <video> tags, indexed by peer_id_video
 let peerAudioMediaElements = {}; // keep track of our peer <audio> tags, indexed by peer_id_audio
 
-// main buttons
+// main and bottom buttons
 let mainButtonsBarPosition = 'vertical'; // vertical - horizontal
 let placement = 'right'; // https://atomiks.github.io/tippyjs/#placements
+let bottomButtonsPlacement = 'right';
 let isButtonsVisible = false;
 let isButtonsBarOver = false;
 
@@ -640,6 +658,8 @@ let leftChatAvatar;
 let rightChatAvatar;
 let chatMessagesId = 0;
 let showChatOnMessage = true;
+let isChatPinned = false;
+let isCaptionPinned = false;
 let isChatRoomVisible = false;
 let isCaptionBoxVisible = false;
 let isChatEmojiVisible = false;
@@ -752,9 +772,8 @@ function setButtonsToolTip() {
     setTippy(msgerClose, 'Close', 'bottom');
     setTippy(msgerShowChatOnMsgDiv, 'Show chat when you receive a new message', 'bottom');
     setTippy(msgerSpeechMsgDiv, 'Speech the incoming messages', 'bottom');
+    setTippy(msgerTogglePin, 'Toggle chat pin', 'bottom');
     setTippy(msgerTheme, 'Ghost theme', 'bottom');
-    setTippy(msgerClean, 'Clean the messages', 'bottom');
-    setTippy(msgerSaveBtn, 'Save the messages', 'bottom');
     setTippy(msgerMaxBtn, 'Maximize', 'bottom');
     setTippy(msgerMinBtn, 'Minimize', 'bottom');
     setTippy(msgerEmojiBtn, 'Emoji', 'top');
@@ -771,6 +790,7 @@ function setButtonsToolTip() {
     setTippy(captionClose, 'Close', 'bottom');
     setTippy(captionMaxBtn, 'Maximize', 'bottom');
     setTippy(captionMinBtn, 'Minimize', 'bottom');
+    setTippy(captionTogglePin, 'Toggle caption pin', 'bottom');
     setTippy(captionTheme, 'Ghost theme', 'bottom');
     setTippy(captionClean, 'Clean the messages', 'bottom');
     setTippy(captionSaveBtn, 'Save the messages', 'bottom');
@@ -811,6 +831,9 @@ function setButtonsToolTip() {
         'right',
     );
     // Whiteboard buttons
+    setTippy(whiteboardLockBtn, 'Toggle Lock whiteboard', 'right');
+    setTippy(whiteboardUnlockBtn, 'Toggle Lock whiteboard', 'right');
+    setTippy(whiteboardCloseBtn, 'Close', 'right');
     setTippy(wbDrawingColorEl, 'Drawing color', 'bottom');
     setTippy(whiteboardGhostButton, 'Toggle transparent background', 'bottom');
     setTippy(wbBackgroundColorEl, 'Background color', 'bottom');
@@ -818,22 +841,10 @@ function setButtonsToolTip() {
     setTippy(whiteboardObjectBtn, 'Object mode', 'bottom');
     setTippy(whiteboardUndoBtn, 'Undo', 'bottom');
     setTippy(whiteboardRedoBtn, 'Redo', 'bottom');
-    setTippy(whiteboardImgFileBtn, 'Add image from file', 'bottom');
-    setTippy(whiteboardPdfFileBtn, 'Add pdf from file', 'bottom');
-    setTippy(whiteboardImgUrlBtn, 'Add image from URL', 'bottom');
-    setTippy(whiteboardTextBtn, 'Add the text', 'bottom');
-    setTippy(whiteboardLineBtn, 'Add the line', 'bottom');
-    setTippy(whiteboardRectBtn, 'Add the rectangle', 'bottom');
-    setTippy(whiteboardTriangleBtn, 'Add triangle', 'bottom');
-    setTippy(whiteboardCircleBtn, 'Add the circle', 'bottom');
-    setTippy(whiteboardSaveBtn, 'Save the board', 'bottom');
-    setTippy(whiteboardEraserBtn, 'Erase the object', 'bottom');
-    setTippy(whiteboardCleanBtn, 'Clean the board', 'bottom');
-    setTippy(whiteboardLockBtn, 'If enabled, participants cannot interact', 'right');
-    setTippy(whiteboardCloseBtn, 'Close', 'right');
     // Suspend/Hide File transfer buttons
-    setTippy(sendAbortBtn, 'Abort file transfer', 'right-start');
-    setTippy(receiveHideBtn, 'Hide file transfer', 'right-start');
+    setTippy(sendAbortBtn, 'Abort file transfer', 'bottom');
+    setTippy(receiveAbortBtn, 'Abort file transfer', 'bottom');
+    setTippy(receiveHideBtn, 'Hide file transfer', 'bottom');
     // Video/audio URL player
     setTippy(videoUrlCloseBtn, 'Close the video player', 'bottom');
     setTippy(videoAudioCloseBtn, 'Close the video player', 'bottom');
@@ -847,25 +858,32 @@ function setButtonsToolTip() {
 function refreshMainButtonsToolTipPlacement() {
     // not need for mobile
     if (isMobileDevice) return;
-    // main buttons
+
+    // ButtonsBar
     placement = btnsBarSelect.options[btnsBarSelect.selectedIndex].value == 'vertical' ? 'right' : 'top';
-    setTippy(shareRoomBtn, 'Invite others to join', placement);
-    setTippy(hideMeBtn, 'Toggle hide myself from the room view', placement);
-    setTippy(audioBtn, useAudio ? 'Stop the audio' : 'My audio is disabled', placement);
-    setTippy(videoBtn, useVideo ? 'Stop the video' : 'My video is disabled', placement);
-    setTippy(screenShareBtn, 'Start screen sharing', placement);
+
+    // BottomButtons
+    bottomButtonsPlacement = btnsBarSelect.options[btnsBarSelect.selectedIndex].value == 'vertical' ? 'top' : 'right';
+
+    setTippy(shareRoomBtn, 'Share the Room', placement);
     setTippy(recordStreamBtn, 'Start recording', placement);
     setTippy(fullScreenBtn, 'View full screen', placement);
     setTippy(chatRoomBtn, 'Open the chat', placement);
     setTippy(captionBtn, 'Open the caption', placement);
     setTippy(roomEmojiPickerBtn, 'Send reaction', placement);
-    setTippy(myHandBtn, 'Raise your hand', placement);
     setTippy(whiteboardBtn, 'Open the whiteboard', placement);
+    setTippy(snapshotRoomBtn, 'Snapshot screen, windows or tab', placement);
     setTippy(fileShareBtn, 'Share file', placement);
     setTippy(documentPiPBtn, 'Toggle picture in picture', placement);
     setTippy(mySettingsBtn, 'Open the settings', placement);
     setTippy(aboutBtn, 'About this project', placement);
-    setTippy(leaveRoomBtn, 'Leave this room', placement);
+
+    setTippy(hideMeBtn, 'Toggle hide myself from the room view', bottomButtonsPlacement);
+    setTippy(audioBtn, useAudio ? 'Stop the audio' : 'My audio is disabled', bottomButtonsPlacement);
+    setTippy(videoBtn, useVideo ? 'Stop the video' : 'My video is disabled', bottomButtonsPlacement);
+    setTippy(screenShareBtn, 'Start screen sharing', bottomButtonsPlacement);
+    setTippy(myHandBtn, 'Raise your hand', bottomButtonsPlacement);
+    setTippy(leaveRoomBtn, 'Leave this room', bottomButtonsPlacement);
 }
 
 /**
@@ -911,6 +929,48 @@ function getPeerInfo() {
         browserName: browserName,
         browserVersion: browserVersion,
     };
+}
+
+/**
+ * Get Extra info
+ * @returns object info
+ */
+function getInfo() {
+    const parser = new UAParser(userAgent);
+
+    try {
+        const parserResult = parser.getResult();
+        console.log('Info', parserResult);
+
+        // Filter out properties with 'Unknown' values
+        const filterUnknown = (obj) => {
+            const filtered = {};
+            for (const [key, value] of Object.entries(obj)) {
+                if (value && value !== 'Unknown') {
+                    filtered[key] = value;
+                }
+            }
+            return filtered;
+        };
+
+        const filteredResult = {
+            //ua: parserResult.ua,
+            browser: filterUnknown(parserResult.browser),
+            cpu: filterUnknown(parserResult.cpu),
+            device: filterUnknown(parserResult.device),
+            engine: filterUnknown(parserResult.engine),
+            os: filterUnknown(parserResult.os),
+        };
+
+        // Convert the filtered result to a readable JSON string
+        const resultString = JSON.stringify(filteredResult, null, 2);
+
+        extraInfo.innerText = resultString;
+
+        return parserResult;
+    } catch (error) {
+        console.error('Error parsing user agent:', error);
+    }
 }
 
 /**
@@ -1149,6 +1209,7 @@ function initClientPeer() {
     signalingSocket.on('kickOut', handleKickedOut);
     signalingSocket.on('fileInfo', handleFileInfo);
     signalingSocket.on('fileAbort', handleFileAbort);
+    signalingSocket.on('fileReceiveAbort', handleAbortFileTransfer);
     signalingSocket.on('videoPlayer', handleVideoPlayer);
     signalingSocket.on('disconnect', handleDisconnect);
     signalingSocket.on('removePeer', handleRemovePeer);
@@ -1346,11 +1407,13 @@ function handleButtonsRule() {
     elemDisplay(roomEmojiPickerBtn, buttons.main.showRoomEmojiPickerBtn);
     elemDisplay(myHandBtn, buttons.main.showMyHandBtn);
     elemDisplay(whiteboardBtn, buttons.main.showWhiteboardBtn);
+    elemDisplay(snapshotRoomBtn, buttons.main.showSnapshotRoomBtn && !isMobileDevice);
     elemDisplay(fileShareBtn, buttons.main.showFileShareBtn);
     elemDisplay(documentPiPBtn, buttons.main.showDocumentPipBtn);
     elemDisplay(mySettingsBtn, buttons.main.showMySettingsBtn);
     elemDisplay(aboutBtn, buttons.main.showAboutBtn);
     // chat
+    elemDisplay(msgerTogglePin, !isMobileDevice && buttons.chat.showTogglePinBtn);
     elemDisplay(msgerMaxBtn, !isMobileDevice && buttons.chat.showMaxBtn);
     elemDisplay(msgerSaveBtn, buttons.chat.showSaveMessageBtn);
     elemDisplay(msgerMarkdownBtn, buttons.chat.showMarkDownBtn);
@@ -1359,6 +1422,7 @@ function handleButtonsRule() {
     elemDisplay(msgerVideoUrlBtn, buttons.chat.showShareVideoAudioBtn);
     elemDisplay(msgerCPBtn, buttons.chat.showParticipantsBtn);
     // caption
+    elemDisplay(captionTogglePin, !isMobileDevice && buttons.caption.showTogglePinBtn);
     elemDisplay(captionMaxBtn, !isMobileDevice && buttons.caption.showMaxBtn);
     // Settings
     elemDisplay(dropDownMicOptions, buttons.settings.showMicOptionsBtn && isPresenter); // auto-detected
@@ -1373,8 +1437,8 @@ function handleButtonsRule() {
     elemDisplay(tabEmailInvitation, buttons.settings.showTabEmailInvitation);
     // Whiteboard
     buttons.whiteboard.whiteboardLockBtn
-        ? elemDisplay(whiteboardLockBtn, true)
-        : elemDisplay(whiteboardLockBtn, false, 'flex');
+        ? elemDisplay(whiteboardLockBtn, true, 'flex')
+        : elemDisplay(whiteboardLockBtn, false);
 }
 
 /**
@@ -1447,7 +1511,7 @@ async function whoAreYou() {
         title: 'Boardgame Chat',
         position: 'center',
         input: 'text',
-        inputPlaceholder: 'Enter your name',
+        inputPlaceholder: 'Enter your email or name',
         inputAttributes: { maxlength: 32 },
         inputValue: window.localStorage.peer_name ? window.localStorage.peer_name : '',
         html: initUser, // inject html
@@ -1456,7 +1520,7 @@ async function whoAreYou() {
         showClass: { popup: 'animate__animated animate__fadeInDown' },
         hideClass: { popup: 'animate__animated animate__fadeOutUp' },
         inputValidator: async (value) => {
-            if (!value) return 'Please enter your name';
+            if (!value) return 'Please enter your email or name';
             // Long name
             if (value.length > 30) return 'Name must be max 30 char';
 
@@ -1890,7 +1954,7 @@ async function joinToChannel() {
         peer_privacy_status: isVideoPrivacyActive,
         userAgent: userAgent,
     });
-    handleBodyOnMouseMove(); // show/hide buttonsBar...
+    handleBodyOnMouseMove(); // show/hide buttonsBar, bottomButtons ...
 }
 
 /**
@@ -2315,6 +2379,17 @@ function handleDisconnect(reason) {
     for (const peer_id in peerConnections) {
         const peerVideoId = peer_id + '___video';
         const peerAudioId = peer_id + '___audio';
+
+        const peerVideo = getId(peerVideoId);
+        if (peerVideo) {
+            // Peer video in focus mode
+            if (peerVideo.hasAttribute('focus-mode')) {
+                const remoteVideoFocusBtn = getId(peer_id + '_focusMode');
+                if (remoteVideoFocusBtn) {
+                    remoteVideoFocusBtn.click();
+                }
+            }
+        }
         peerVideoMediaElements[peerVideoId].parentNode.removeChild(peerVideoMediaElements[peerVideoId]);
         peerAudioMediaElements[peerAudioId].parentNode.removeChild(peerAudioMediaElements[peerAudioId]);
         peerConnections[peer_id].close();
@@ -2349,6 +2424,16 @@ function handleRemovePeer(config) {
     const peerAudioId = peer_id + '___audio';
 
     if (peerVideoId in peerVideoMediaElements) {
+        const peerVideo = getId(peerVideoId);
+        if (peerVideo) {
+            // Peer video in focus mode
+            if (peerVideo.hasAttribute('focus-mode')) {
+                const remoteVideoFocusBtn = getId(peer_id + '_focusMode');
+                if (remoteVideoFocusBtn) {
+                    remoteVideoFocusBtn.click();
+                }
+            }
+        }
         peerVideoMediaElements[peerVideoId].parentNode.removeChild(peerVideoMediaElements[peerVideoId]);
         adaptAspectRatio();
     }
@@ -2394,6 +2479,7 @@ function setCustomTheme() {
     setSP('--private-msg-bg', '#6b1226');
     setSP('--btn-bar-bg-color', '#FFFFFF');
     setSP('--btn-bar-color', '#000000');
+    setSP('--btns-bg-color', `${color}`);
     document.body.style.background = `radial-gradient(${color}, ${color})`;
 }
 
@@ -2414,96 +2500,172 @@ function setTheme() {
             setSP('--msger-private-bg', 'radial-gradient(#393939, #000000)');
             setSP('--wb-bg', 'radial-gradient(#393939, #000000)');
             setSP('--elem-border-color', 'none');
-            setSP('--navbar-bg', 'rgba(0, 0, 0, 0.2)');
-            setSP('--select-bg', '#2c2c2c');
-            setSP('--tab-btn-active', 'rgb(30 29 29)');
-            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.2)');
-            setSP('--left-msg-bg', '#252d31');
-            setSP('--right-msg-bg', '#056162');
-            setSP('--private-msg-bg', '#6b1226');
+            setSP('--navbar-bg', 'rgba(28, 28, 28, 0.8)');
+            setSP('--select-bg', '#3a3a3a');
+            setSP('--tab-btn-active', '#4f4f4f');
+            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.4)');
+            setSP('--left-msg-bg', '#353535');
+            setSP('--right-msg-bg', '#4a4a4a');
+            setSP('--private-msg-bg', '#2a2a2a');
             setSP('--btn-bar-bg-color', '#FFFFFF');
             setSP('--btn-bar-color', '#000000');
+            setSP('--btns-bg-color', 'rgba(0, 0, 0, 0.7)');
+            setSP('--dd-color', '#FFFFFF');
             document.body.style.background = 'radial-gradient(#393939, #000000)';
             mirotalkTheme.selectedIndex = 0;
             break;
         case 'grey':
             // grey theme
-            swBg = 'radial-gradient(#666, #333)';
-            setSP('--body-bg', 'radial-gradient(#666, #333)');
-            setSP('--msger-bg', 'radial-gradient(#666, #333)');
-            setSP('--wb-bg', 'radial-gradient(#797979, #000)');
+            swBg = 'radial-gradient(#4f4f4f, #1c1c1c)';
+            setSP('--body-bg', 'radial-gradient(#4f4f4f, #1c1c1c)');
+            setSP('--msger-bg', 'radial-gradient(#4f4f4f, #1c1c1c)');
+            setSP('--wb-bg', 'radial-gradient(#5f5f5f, #2c2c2c)');
             setSP('--elem-border-color', 'none');
-            setSP('--navbar-bg', 'rgba(0, 0, 0, 0.2)');
-            setSP('--select-bg', '#2c2c2c');
-            setSP('--tab-btn-active', 'rgb(30 29 29)');
-            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.2)');
-            setSP('--msger-private-bg', 'radial-gradient(#666, #333)');
-            setSP('--left-msg-bg', '#252d31');
-            setSP('--right-msg-bg', '#056162');
-            setSP('--private-msg-bg', '#6b1226');
+            setSP('--navbar-bg', 'rgba(28, 28, 28, 0.8)');
+            setSP('--select-bg', '#3a3a3a');
+            setSP('--tab-btn-active', '#4f4f4f');
+            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.4)');
+            setSP('--msger-private-bg', 'radial-gradient(#4f4f4f, #1c1c1c)');
+            setSP('--left-msg-bg', '#353535');
+            setSP('--right-msg-bg', '#4a4a4a');
+            setSP('--private-msg-bg', '#616161');
             setSP('--btn-bar-bg-color', '#FFFFFF');
             setSP('--btn-bar-color', '#000000');
-            document.body.style.background = 'radial-gradient(#666, #333)';
+            setSP('--btns-bg-color', 'rgba(0, 0, 0, 0.7)');
+            setSP('--dd-color', '#FFFFFF');
+            document.body.style.background = 'radial-gradient(#4f4f4f, #1c1c1c)';
             mirotalkTheme.selectedIndex = 1;
             break;
         case 'green':
             // green theme
-            swBg = 'radial-gradient(#003934, #001E1A)';
-            setSP('--body-bg', 'radial-gradient(#003934, #001E1A)');
-            setSP('--msger-bg', 'radial-gradient(#003934, #001E1A)');
-            setSP('--wb-bg', 'radial-gradient(#003934, #001E1A)');
+            swBg = 'radial-gradient(#004d40, #001f1c)';
+            setSP('--body-bg', 'radial-gradient(#004d40, #001f1c)');
+            setSP('--msger-bg', 'radial-gradient(#004d40, #001f1c)');
+            setSP('--wb-bg', 'radial-gradient(#004d40, #001f1c)');
             setSP('--elem-border-color', 'none');
-            setSP('--navbar-bg', 'rgba(0, 0, 0, 0.2)');
-            setSP('--select-bg', '#001E1A');
-            setSP('--tab-btn-active', '#003934');
-            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.2)');
-            setSP('--msger-private-bg', 'radial-gradient(#666, #333)');
-            setSP('--left-msg-bg', '#003934');
-            setSP('--right-msg-bg', '#001E1A');
-            setSP('--private-msg-bg', '#6b1226');
+            setSP('--navbar-bg', 'rgba(0, 31, 28, 0.8)');
+            setSP('--select-bg', '#002e2b');
+            setSP('--tab-btn-active', '#004d40');
+            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.4)');
+            setSP('--msger-private-bg', 'radial-gradient(#4f4f4f, #1c1c1c)');
+            setSP('--left-msg-bg', '#004d40');
+            setSP('--right-msg-bg', '#00312c');
+            setSP('--private-msg-bg', '#004a47');
             setSP('--btn-bar-bg-color', '#FFFFFF');
             setSP('--btn-bar-color', '#000000');
-            document.body.style.background = 'radial-gradient(#003934, #001E1A)';
+            setSP('--btns-bg-color', 'rgba(0, 42, 34, 0.7)');
+            setSP('--dd-color', '#00FF00');
+            document.body.style.background = 'radial-gradient(#004d40, #001f1c)';
             mirotalkTheme.selectedIndex = 2;
             break;
         case 'blue':
             // blue theme
-            swBg = 'radial-gradient(#306bac, #141B41)';
-            setSP('--body-bg', 'radial-gradient(#306bac, #141B41)');
-            setSP('--msger-bg', 'radial-gradient(#306bac, #141B41)');
-            setSP('--wb-bg', 'radial-gradient(#306bac, #141B41)');
+            swBg = 'radial-gradient(#1a237e, #0d1b34)';
+            setSP('--body-bg', 'radial-gradient(#1a237e, #0d1b34)');
+            setSP('--msger-bg', 'radial-gradient(#1a237e, #0d1b34)');
+            setSP('--wb-bg', 'radial-gradient(#1a237e, #0d1b34)');
             setSP('--elem-border-color', 'none');
-            setSP('--navbar-bg', 'rgba(0, 0, 0, 0.2)');
-            setSP('--select-bg', '#141B41');
-            setSP('--tab-btn-active', '#306bac');
-            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.2)');
-            setSP('--msger-private-bg', 'radial-gradient(#666, #333)');
-            setSP('--left-msg-bg', '#306bac');
-            setSP('--right-msg-bg', '#141B41');
-            setSP('--private-msg-bg', '#6b1226');
+            setSP('--navbar-bg', 'rgba(13, 27, 52, 0.8)');
+            setSP('--select-bg', '#0d1b34');
+            setSP('--tab-btn-active', '#1a237e');
+            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.4)');
+            setSP('--msger-private-bg', 'radial-gradient(#4f4f4f, #1c1c1c)');
+            setSP('--left-msg-bg', '#1a237e');
+            setSP('--right-msg-bg', '#0d1b34');
+            setSP('--private-msg-bg', '#1a237e');
             setSP('--btn-bar-bg-color', '#FFFFFF');
             setSP('--btn-bar-color', '#000000');
-            document.body.style.background = 'radial-gradient(#306bac, #141B41)';
+            setSP('--btns-bg-color', 'rgba(0, 39, 77, 0.7)');
+            setSP('--dd-color', '#1E90FF');
+            document.body.style.background = 'radial-gradient(#1a237e, #0d1b34)';
             mirotalkTheme.selectedIndex = 3;
             break;
         case 'red':
             // red theme
-            swBg = 'radial-gradient(#69140E, #3C1518)';
-            setSP('--body-bg', 'radial-gradient(#69140E, #3C1518)');
-            setSP('--msger-bg', 'radial-gradient(#69140E, #3C1518)');
-            setSP('--wb-bg', 'radial-gradient(#69140E, #3C1518)');
-            setSP('--navbar-bg', 'rgba(0, 0, 0, 0.2)');
-            setSP('--select-bg', '#3C1518');
-            setSP('--tab-btn-active', '#69140E');
-            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.2)');
-            setSP('--msger-private-bg', 'radial-gradient(#666, #333)');
-            setSP('--left-msg-bg', '#69140E');
-            setSP('--right-msg-bg', '#3C1518');
-            setSP('--private-msg-bg', '#6b1226');
+            swBg = 'radial-gradient(#8B0000, #320000)';
+            setSP('--body-bg', 'radial-gradient(#8B0000, #320000)');
+            setSP('--msger-bg', 'radial-gradient(#8B0000, #320000)');
+            setSP('--wb-bg', 'radial-gradient(#8B0000, #320000)');
+            setSP('--navbar-bg', 'rgba(50, 0, 0, 0.8)');
+            setSP('--select-bg', '#320000');
+            setSP('--tab-btn-active', '#8B0000');
+            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.4)');
+            setSP('--msger-private-bg', 'radial-gradient(#4f4f4f, #1c1c1c)');
+            setSP('--left-msg-bg', '#8B0000');
+            setSP('--right-msg-bg', '#4B0000');
+            setSP('--private-msg-bg', '#8B0000');
             setSP('--btn-bar-bg-color', '#FFFFFF');
             setSP('--btn-bar-color', '#000000');
-            document.body.style.background = 'radial-gradient(#69140E, #3C1518)';
+            setSP('--btns-bg-color', 'rgba(42, 13, 13, 0.7)');
+            setSP('--dd-color', '#FF4500');
+            document.body.style.background = 'radial-gradient(#8B0000, #320000)';
             mirotalkTheme.selectedIndex = 4;
+            break;
+        case 'purple':
+            // purple theme
+            swBg = 'radial-gradient(#4B0082, #2C003E)';
+            setSP('--body-bg', 'radial-gradient(#4B0082, #2C003E)');
+            setSP('--msger-bg', 'radial-gradient(#4B0082, #2C003E)');
+            setSP('--wb-bg', 'radial-gradient(#4B0082, #2C003E)');
+            setSP('--elem-border-color', 'none');
+            setSP('--navbar-bg', 'rgba(44, 0, 62, 0.8)');
+            setSP('--select-bg', '#2C003E');
+            setSP('--tab-btn-active', '#4B0082');
+            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.4)');
+            setSP('--msger-private-bg', 'radial-gradient(#4f4f4f, #1c1c1c)');
+            setSP('--left-msg-bg', '#4B0082');
+            setSP('--right-msg-bg', '#2C003E');
+            setSP('--private-msg-bg', '#4B0082');
+            setSP('--btn-bar-bg-color', '#FFFFFF');
+            setSP('--btn-bar-color', '#000000');
+            setSP('--btns-bg-color', 'rgba(42, 0, 29, 0.7)');
+            setSP('--dd-color', '#BF00FF');
+            document.body.style.background = 'radial-gradient(#4B0082, #2C003E)';
+            mirotalkTheme.selectedIndex = 5;
+            break;
+        case 'orange':
+            // orange theme
+            swBg = 'radial-gradient(#FF8C00, #4B1C00)';
+            setSP('--body-bg', 'radial-gradient(#FF8C00, #4B1C00)');
+            setSP('--msger-bg', 'radial-gradient(#FF8C00, #4B1C00)');
+            setSP('--wb-bg', 'radial-gradient(#FF8C00, #4B1C00)');
+            setSP('--elem-border-color', 'none');
+            setSP('--navbar-bg', 'rgba(75, 28, 0, 0.8)');
+            setSP('--select-bg', '#4B1C00');
+            setSP('--tab-btn-active', '#FF8C00');
+            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.4)');
+            setSP('--msger-private-bg', 'radial-gradient(#4f4f4f, #1c1c1c)');
+            setSP('--left-msg-bg', '#FF8C00');
+            setSP('--right-msg-bg', '#4B1C00');
+            setSP('--private-msg-bg', '#FF8C00');
+            setSP('--btn-bar-bg-color', '#FFFFFF');
+            setSP('--btn-bar-color', '#000000');
+            setSP('--btns-bg-color', 'rgba(61, 26, 0, 0.7)');
+            setSP('--dd-color', '#FFA500');
+            document.body.style.background = 'radial-gradient(#FF8C00, #4B1C00)';
+            mirotalkTheme.selectedIndex = 6;
+            break;
+        case 'yellow':
+            // yellow theme
+            swBg = 'radial-gradient(#FFD700, #3B3B00)';
+            setSP('--body-bg', 'radial-gradient(#FFD700, #3B3B00)');
+            setSP('--msger-bg', 'radial-gradient(#FFD700, #3B3B00)');
+            setSP('--wb-bg', 'radial-gradient(#FFD700, #3B3B00)');
+            setSP('--elem-border-color', 'none');
+            setSP('--navbar-bg', 'rgba(59, 59, 0, 0.8)');
+            setSP('--select-bg', '#3B3B00');
+            setSP('--tab-btn-active', '#FFD700');
+            setSP('--box-shadow', '0px 8px 16px 0px rgba(0, 0, 0, 0.4)');
+            setSP('--msger-private-bg', 'radial-gradient(#4f4f4f, #1c1c1c)');
+            setSP('--left-msg-bg', '#FFD700');
+            setSP('--right-msg-bg', '#B8860B');
+            setSP('--private-msg-bg', '#FFD700');
+            setSP('--btn-bar-bg-color', '#FFFFFF');
+            setSP('--btn-bar-color', '#000000');
+            setSP('--btns-bg-color', 'rgba(77, 59, 0, 0.7)');
+            setSP('--dd-color', '#FFD700');
+            document.body.style.background = 'radial-gradient(#FFD700, #3B3B00)';
+            mirotalkTheme.selectedIndex = 7;
             break;
         // ...
         default:
@@ -2523,20 +2685,38 @@ function setButtonsBarPosition(position) {
     mainButtonsBarPosition = position;
     switch (mainButtonsBarPosition) {
         case 'vertical':
+            // buttonsBar
             setSP('--btns-top', '50%');
             setSP('--btns-right', '0px');
             setSP('--btns-left', '15px');
             setSP('--btns-margin-left', '0px');
             setSP('--btns-width', '40px');
             setSP('--btns-flex-direction', 'column');
+            // bottomButtons horizontally
+            setSP('--bottom-btns-top', 'auto');
+            setSP('--bottom-btns-left', '50%');
+            setSP('--bottom-btns-bottom', '0');
+            setSP('--bottom-btns-translate-X', '-50%');
+            setSP('--bottom-btns-translate-Y', '0%');
+            setSP('--bottom-btns-margin-bottom', '16px');
+            setSP('--bottom-btns-flex-direction', 'row');
             break;
         case 'horizontal':
+            // buttonsBar
             setSP('--btns-top', '95%');
             setSP('--btns-right', '25%');
             setSP('--btns-left', '50%');
-            setSP('--btns-margin-left', '-330px');
-            setSP('--btns-width', '660px');
+            setSP('--btns-margin-left', '-260px');
+            setSP('--btns-width', '520px');
             setSP('--btns-flex-direction', 'row');
+            // bottomButtons vertically
+            setSP('--bottom-btns-top', '50%');
+            setSP('--bottom-btns-left', '15px');
+            setSP('--bottom-btns-bottom', 'auto');
+            setSP('--bottom-btns-translate-X', '0%');
+            setSP('--bottom-btns-translate-Y', '-50%');
+            setSP('--bottom-btns-margin-bottom', '0');
+            setSP('--bottom-btns-flex-direction', 'column');
             break;
         default:
             console.log('No position found');
@@ -3120,6 +3300,7 @@ async function loadRemoteMediaStream(stream, peers, peer_id, kind) {
             const remoteVideoToImgBtn = document.createElement('button');
             const remoteVideoFullScreenBtn = document.createElement('button');
             const remoteVideoPinBtn = document.createElement('button');
+            const remoteVideoFocusBtn = document.createElement('button');
             const remoteVideoMirrorBtn = document.createElement('button');
             const remoteVideoZoomInBtn = document.createElement('button');
             const remoteVideoZoomOutBtn = document.createElement('button');
@@ -3201,6 +3382,10 @@ async function loadRemoteMediaStream(stream, peers, peer_id, kind) {
             remoteVideoPinBtn.setAttribute('id', peer_id + '_pinUnpin');
             remoteVideoPinBtn.className = className.pinUnpin;
 
+            // remote video hide all button
+            remoteVideoFocusBtn.setAttribute('id', peer_id + '_focusMode');
+            remoteVideoFocusBtn.className = className.hideAll;
+
             // remote video toggle mirror
             remoteVideoMirrorBtn.setAttribute('id', peer_id + '_toggleMirror');
             remoteVideoMirrorBtn.className = className.mirror;
@@ -3222,6 +3407,7 @@ async function loadRemoteMediaStream(stream, peers, peer_id, kind) {
                 setTippy(remoteVideoZoomOutBtn, 'Zoom out video', 'bottom');
                 setTippy(remoteVideoPiPBtn, 'Toggle picture in picture', 'bottom');
                 setTippy(remoteVideoPinBtn, 'Toggle Pin video', 'bottom');
+                setTippy(remoteVideoFocusBtn, 'Toggle Focus mode', 'bottom');
                 setTippy(remoteVideoMirrorBtn, 'Toggle video mirror', 'bottom');
             }
 
@@ -3249,6 +3435,8 @@ async function loadRemoteMediaStream(stream, peers, peer_id, kind) {
 
             // attach to remote video nav bar
             !isMobileDevice && remoteVideoNavBar.appendChild(remoteVideoPinBtn);
+
+            buttons.remote.showVideoFocusBtn && remoteVideoNavBar.appendChild(remoteVideoFocusBtn);
 
             remoteVideoNavBar.appendChild(remoteVideoMirrorBtn);
 
@@ -3292,6 +3480,7 @@ async function loadRemoteMediaStream(stream, peers, peer_id, kind) {
 
             remoteVideoWrap.className = 'Camera';
             remoteVideoWrap.setAttribute('id', peer_id + '_videoWrap');
+            remoteVideoWrap.style.display = isHideALLVideosActive ? 'none' : 'block';
 
             // add elements to videoWrap div
             remoteVideoWrap.appendChild(remoteVideoNavBar);
@@ -3315,6 +3504,9 @@ async function loadRemoteMediaStream(stream, peers, peer_id, kind) {
 
             // handle video pin/unpin
             handleVideoPinUnpin(remoteMedia.id, remoteVideoPinBtn.id, remoteVideoWrap.id, peer_id, peer_screen_status);
+
+            // handle video focus mode
+            handleVideoFocusMode(remoteVideoFocusBtn, remoteVideoWrap, remoteMedia);
 
             // handle video toggle mirror
             handleVideoToggleMirror(remoteMedia.id, remoteVideoMirrorBtn.id);
@@ -3570,6 +3762,7 @@ function genAvatarSvg(peerName, avatarImgSize) {
  */
 function setPeerAvatarImgName(videoAvatarImageId, peerName) {
     const videoAvatarImageElement = getId(videoAvatarImageId);
+    videoAvatarImageElement.style.pointerEvents = 'none';
     if (useAvatarSvg) {
         const avatarImgSize = isMobileDevice ? 128 : 256;
         const avatarImgSvg = isValidEmail(peerName) ? genGravatar(peerName) : genAvatarSvg(peerName, avatarImgSize);
@@ -3745,10 +3938,21 @@ function handleFileDragAndDrop(elemId, peer_id, itsMe = false) {
 
     videoPeer.addEventListener('dragover', function (e) {
         e.preventDefault();
+        e.stopPropagation();
+        e.target.parentElement.style.outline = '3px dashed var(--dd-color)';
+        document.querySelector('.Camera').style.outline = 'none';
+    });
+
+    videoPeer.addEventListener('dragleave', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.target.parentElement.style.outline = 'none';
     });
 
     videoPeer.addEventListener('drop', function (e) {
         e.preventDefault();
+        e.stopPropagation();
+        e.target.parentElement.style.outline = 'none';
         if (itsMe) {
             return userLog('warning', 'You cannot send files to yourself.');
         }
@@ -3898,6 +4102,38 @@ function toggleVideoPin(position) {
             break;
     }
     resizeVideoMedia();
+}
+
+/**
+ * Handle video focus mode (hide all except selected one)
+ * @param {object} remoteVideoFocusBtn button
+ * @param {object} remoteVideoWrap videoWrapper
+ * @param {object} remoteMedia videoMedia
+ */
+function handleVideoFocusMode(remoteVideoFocusBtn, remoteVideoWrap, remoteMedia) {
+    if (remoteVideoFocusBtn) {
+        remoteVideoFocusBtn.addEventListener('click', (e) => {
+            if (isHideMeActive) {
+                return userLog('toast', 'To use this feature, please toggle Hide self view before', 'top-end', 6000);
+            }
+            isHideALLVideosActive = !isHideALLVideosActive;
+            e.target.style.color = isHideALLVideosActive ? 'lime' : 'white';
+            if (isHideALLVideosActive) {
+                remoteVideoWrap.style.width = '100%';
+                remoteVideoWrap.style.height = '100%';
+                remoteMedia.setAttribute('focus-mode', 'true');
+            } else {
+                resizeVideoMedia();
+                remoteMedia.removeAttribute('focus-mode');
+            }
+            const children = videoMediaContainer.children;
+            for (let child of children) {
+                if (child.id != remoteVideoWrap.id) {
+                    child.style.display = isHideALLVideosActive ? 'none' : 'block';
+                }
+            }
+        });
+    }
 }
 
 /**
@@ -4054,13 +4290,39 @@ function removeVideoPinMediaContainer(peer_id, force_remove = false) {
         force_remove
     ) {
         elemDisplay(videoPinMediaContainer, false);
+        isVideoPinned = false;
+        pinnedVideoPlayerId = null;
+        videoMediaContainerUnpin();
+        if (isChatPinned) {
+            chatPin();
+        }
+        if (isCaptionPinned) {
+            captionPin();
+        }
+        resizeVideoMedia();
+    }
+}
+
+/**
+ * Pin videoMediaContainer
+ */
+function videoMediaContainerPin() {
+    if (!isVideoPinned) {
+        videoMediaContainer.style.top = 0;
+        videoMediaContainer.style.width = '75%';
+        videoMediaContainer.style.height = '100%';
+    }
+}
+
+/**
+ * Unpin videoMediaContainer
+ */
+function videoMediaContainerUnpin() {
+    if (!isVideoPinned) {
         videoMediaContainer.style.top = 0;
         videoMediaContainer.style.right = null;
         videoMediaContainer.style.width = '100%';
         videoMediaContainer.style.height = '100%';
-        pinnedVideoPlayerId = null;
-        isVideoPinned = false;
-        resizeVideoMedia();
     }
 }
 
@@ -4170,6 +4432,7 @@ function manageLeftButtons() {
     setChatEmojiBtn();
     setMyHandBtn();
     setMyWhiteboardBtn();
+    setSnapshotRoomBtn();
     setMyFileShareBtn();
     setDocumentPiPBtn();
     setMySettingsBtn();
@@ -4191,6 +4454,9 @@ function setShareRoomBtn() {
  */
 function setHideMeButton() {
     hideMeBtn.addEventListener('click', (e) => {
+        if (isHideALLVideosActive) {
+            return userLog('toast', 'To use this feature, please toggle video focus mode', 'top-end', 6000);
+        }
         isHideMeActive = !isHideMeActive;
         handleHideMe(isHideMeActive);
     });
@@ -4332,6 +4598,11 @@ function setChatRoomBtn() {
         }
     });
 
+    // pin/unpin
+    msgerTogglePin.addEventListener('click', () => {
+        toggleChatPin();
+    });
+
     // ghost theme + undo
     msgerTheme.addEventListener('click', (e) => {
         if (e.target.className == className.ghost) {
@@ -4341,6 +4612,11 @@ function setChatRoomBtn() {
             e.target.className = className.ghost;
             setTheme();
         }
+    });
+
+    // dropdown chat menu
+    msgerDropDownMenuBtn.addEventListener('click', () => {
+        toggleChatDropDownMenu();
     });
 
     // show msger participants section
@@ -4504,6 +4780,11 @@ function setCaptionRoomBtn() {
             captionMinimize();
         });
 
+        // toggle caption pin
+        captionTogglePin.addEventListener('click', () => {
+            toggleCaptionPin();
+        });
+
         // ghost theme + undo
         captionTheme.addEventListener('click', (e) => {
             if (e.target.className == className.ghost) {
@@ -4664,6 +4945,11 @@ function setMyWhiteboardBtn() {
     whiteboardRedoBtn.addEventListener('click', (e) => {
         whiteboardAction(getWhiteboardAction('redo'));
     });
+    whiteboardDropDownMenuBtn.addEventListener('click', function () {
+        whiteboardDropdownMenu.style.display === 'block'
+            ? elemDisplay(whiteboardDropdownMenu, false)
+            : elemDisplay(whiteboardDropdownMenu, true, 'block');
+    });
     whiteboardSaveBtn.addEventListener('click', (e) => {
         wbCanvasSaveImg();
     });
@@ -4697,9 +4983,11 @@ function setMyWhiteboardBtn() {
     whiteboardCleanBtn.addEventListener('click', (e) => {
         confirmCleanBoard();
     });
-    whiteboardLockBtn.addEventListener('change', (e) => {
-        wbIsLock = !wbIsLock;
-        whiteboardAction(getWhiteboardAction(wbIsLock ? 'lock' : 'unlock'));
+    whiteboardLockBtn.addEventListener('click', (e) => {
+        toggleLockUnlockWhiteboard();
+    });
+    whiteboardUnlockBtn.addEventListener('click', (e) => {
+        toggleLockUnlockWhiteboard();
     });
     whiteboardCloseBtn.addEventListener('click', (e) => {
         handleWhiteboardToggle();
@@ -4715,6 +5003,12 @@ function setMyWhiteboardBtn() {
         wbIsBgTransparent = !wbIsBgTransparent;
         //setWhiteboardBgColor(wbIsBgTransparent ? 'rgba(0, 0, 0, 0.100)' : wbBackgroundColorEl.value);
         wbIsBgTransparent ? wbCanvasBackgroundColor('rgba(0, 0, 0, 0.100)') : setTheme();
+    });
+    // Hide the whiteboard dropdown menu if clicked outside
+    document.addEventListener('click', (event) => {
+        if (!whiteboardDropDownMenuBtn.contains(event.target) && !whiteboardDropDownMenuBtn.contains(event.target)) {
+            elemDisplay(whiteboardDropdownMenu, false);
+        }
     });
 }
 
@@ -4735,9 +5029,70 @@ function setMyFileShareBtn() {
     sendAbortBtn.addEventListener('click', (e) => {
         abortFileTransfer();
     });
+    receiveAbortBtn.addEventListener('click', (e) => {
+        abortReceiveFileTransfer();
+    });
     receiveHideBtn.addEventListener('click', (e) => {
         hideFileTransfer();
     });
+}
+
+/**
+ * Set snapshot room button click event
+ */
+function setSnapshotRoomBtn() {
+    snapshotRoomBtn.addEventListener('click', async (e) => {
+        await snapshotRoom();
+    });
+}
+
+/**
+ * Snapshot Screen, Window or Tab
+ */
+async function snapshotRoom() {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const video = document.createElement('video');
+
+    try {
+        const captureStream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+        });
+
+        video.srcObject = captureStream;
+        video.onloadedmetadata = () => {
+            video.play();
+        };
+
+        // Wait for the video to start playing
+        video.onplay = async () => {
+            playSound('snapshot');
+
+            // Sleep some ms
+            await sleep(1000);
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Create a link element to download the image
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = 'Room_' + roomId + '_' + getDataTimeString() + '_snapshot.png';
+            link.click();
+
+            // Stop all video tracks to release the capture stream
+            captureStream.getTracks().forEach((track) => track.stop());
+
+            // Clean up: remove references to avoid memory leaks
+            video.srcObject = null;
+            canvas.width = 0;
+            canvas.height = 0;
+        };
+    } catch (err) {
+        console.error('Error: ' + err);
+        userLog('error', 'Snapshot room error ' + err.message, 6000);
+    }
 }
 
 /**
@@ -4893,6 +5248,7 @@ function setMySettingsBtn() {
     mySettingsBtn.addEventListener('click', (e) => {
         if (isMobileDevice) {
             elemDisplay(buttonsBar, false);
+            elemDisplay(bottomButtons, false);
             isButtonsVisible = false;
         }
         hideShowMySettings();
@@ -4998,6 +5354,7 @@ function handleBodyOnMouseMove() {
     document.body.addEventListener('mousemove', (e) => {
         showButtonsBarAndMenu();
     });
+
     // detect buttons bar over
     buttonsBar.addEventListener('mouseover', () => {
         isButtonsBarOver = true;
@@ -5005,6 +5362,14 @@ function handleBodyOnMouseMove() {
     buttonsBar.addEventListener('mouseout', () => {
         isButtonsBarOver = false;
     });
+
+    bottomButtons.addEventListener('mouseover', () => {
+        isButtonsBarOver = true;
+    });
+    bottomButtons.addEventListener('mouseout', () => {
+        isButtonsBarOver = false;
+    });
+
     checkButtonsBarAndMenu();
 }
 
@@ -5348,10 +5713,10 @@ async function getVideoConstraints(videoQuality) {
     switch (videoQuality) {
         case 'default':
             if (forceCamMaxResolutionAndFps) {
-                // This will make the browser use the maximum resolution available as default, `up to 4K and 60fps`.
+                // This will make the browser use the maximum resolution available as default, `up to 8K and 60fps`.
                 constraints = {
-                    width: { ideal: 3840 },
-                    height: { ideal: 2160 },
+                    width: { ideal: 7680 },
+                    height: { ideal: 4320 },
                     frameRate: { ideal: 60 },
                 }; // video cam constraints default
             } else {
@@ -5404,6 +5769,20 @@ async function getVideoConstraints(videoQuality) {
                 height: { exact: 2160 },
                 frameRate: frameRate,
             }; // video cam constraints ultra high bandwidth
+            break;
+        case '6kVideo':
+            constraints = {
+                width: { exact: 6144 },
+                height: { exact: 3456 },
+                frameRate: frameRate,
+            }; // video cam constraints Very ultra high bandwidth
+            break;
+        case '8kVideo':
+            constraints = {
+                width: { exact: 7680 },
+                height: { exact: 4320 },
+                frameRate: frameRate,
+            }; // video cam constraints Very ultra high bandwidth
             break;
         default:
             break;
@@ -5574,6 +5953,7 @@ function showButtonsBarAndMenu() {
         return;
     toggleClassElements('navbar', 'block');
     elemDisplay(buttonsBar, true, 'flex');
+    elemDisplay(bottomButtons, true, 'flex');
     isButtonsVisible = true;
 }
 
@@ -5584,6 +5964,7 @@ function checkButtonsBarAndMenu() {
     if (!isButtonsBarOver) {
         toggleClassElements('navbar', 'none');
         elemDisplay(buttonsBar, false);
+        elemDisplay(bottomButtons, false);
         isButtonsVisible = false;
     }
     setTimeout(() => {
@@ -5757,7 +6138,7 @@ function handleAudio(e, init, force = null) {
 
     if (init) {
         initAudioBtn.className = audioClassName;
-        setTippy(initAudioBtn, audioStatus ? 'Stop the audio' : 'Start the audio', 'top');
+        setTippy(initAudioBtn, audioStatus ? 'Stop the audio' : 'Start the audio', 'right');
         initMicrophoneSelect.disabled = !audioStatus;
         initSpeakerSelect.disabled = !audioStatus;
         lS.setInitConfig(lS.MEDIA_TYPE.audio, audioStatus);
@@ -6754,12 +7135,11 @@ function showChatRoomDraggable() {
     playSound('newMessage');
     if (isMobileDevice) {
         elemDisplay(buttonsBar, false);
+        elemDisplay(bottomButtons, false);
         isButtonsVisible = false;
     }
     chatRoomBtn.className = className.chatOff;
-    msgerDraggable.style.top = '50%';
-    msgerDraggable.style.left = isMobileDevice ? '50%' : '25%';
-    msgerDraggable.style.display = 'flex';
+    chatLeftCenter();
     isChatRoomVisible = true;
     setTippy(chatRoomBtn, 'Close the chat', placement);
 }
@@ -6771,14 +7151,22 @@ function showCaptionDraggable() {
     playSound('newMessage');
     if (isMobileDevice) {
         elemDisplay(buttonsBar, false);
+        elemDisplay(bottomButtons, false);
         isButtonsVisible = false;
     }
     captionBtn.className = 'far fa-closed-captioning';
-    captionDraggable.style.top = '50%';
-    captionDraggable.style.left = isMobileDevice ? '50%' : '75%';
-    captionDraggable.style.display = 'flex';
+    captionRightCenter();
     isCaptionBoxVisible = true;
     setTippy(captionBtn, 'Close the caption', placement);
+}
+
+/**
+ * Toggle Chat dropdown menu
+ */
+function toggleChatDropDownMenu() {
+    msgerDropDownContent.style.display === 'block'
+        ? (msgerDropDownContent.style.display = 'none')
+        : (msgerDropDownContent.style.display = 'block');
 }
 
 /**
@@ -6799,16 +7187,93 @@ function chatMinimize() {
     elemDisplay(msgerMinBtn, false);
     elemDisplay(msgerMaxBtn, true);
     chatCenter();
-    setSP('--msger-width', '420px');
-    setSP('--msger-height', '680px');
+    if (!isChatPinned) {
+        if (isMobileDevice) {
+            setSP('--msger-width', '99%');
+            setSP('--msger-height', '99%');
+        } else {
+            setSP('--msger-width', '420px');
+            setSP('--msger-height', '680px');
+        }
+    } else {
+        setSP('--msger-width', '25%');
+        setSP('--msger-height', '100%');
+    }
 }
 
 /**
  * Set chat position
  */
 function chatCenter() {
+    if (!isChatPinned) {
+        msgerDraggable.style.top = '50%';
+        msgerDraggable.style.left = '50%';
+    }
+}
+
+/**
+ * Toggle Chat Pin
+ */
+function toggleChatPin() {
+    if (isCaptionPinned) {
+        return userLog('toast', 'Please unpin the Caption that appears to be currently pinned');
+    }
+    isChatPinned ? chatUnpin() : chatPin();
+    playSound('click');
+}
+
+/**
+ * Handle chat pin
+ */
+function chatPin() {
+    videoMediaContainerPin();
+    chatPinned();
+    isChatPinned = true;
+    setColor(msgerTogglePin, 'lime');
+    resizeVideoMedia();
+    msgerDraggable.style.resize = 'none';
+    if (!isMobileDevice) undragElement(msgerDraggable, msgerHeader);
+}
+
+/**
+ * Handle chat unpin
+ */
+function chatUnpin() {
+    videoMediaContainerUnpin();
+    setSP('--msger-width', '420px');
+    setSP('--msger-height', '680px');
+    elemDisplay(msgerMinBtn, false);
+    buttons.chat.showMaxBtn && elemDisplay(msgerMaxBtn, true);
+    chatLeftCenter();
+    isChatPinned = false;
+    setColor(msgerTogglePin, 'white');
+    resizeVideoMedia();
+    msgerDraggable.style.resize = 'both';
+    if (!isMobileDevice) dragElement(msgerDraggable, msgerHeader);
+}
+
+/**
+ * Move Chat center left
+ */
+function chatLeftCenter() {
+    msgerDraggable.style.position = 'fixed';
+    msgerDraggable.style.display = 'flex';
     msgerDraggable.style.top = '50%';
-    msgerDraggable.style.left = '50%';
+    msgerDraggable.style.left = isMobileDevice ? '50%' : '25%';
+    msgerDraggable.style.transform = 'translate(-50%, -50%)';
+}
+
+/**
+ * Chat is pinned
+ */
+function chatPinned() {
+    msgerDraggable.style.position = 'absolute';
+    msgerDraggable.style.top = 0;
+    msgerDraggable.style.right = 0;
+    msgerDraggable.style.left = null;
+    msgerDraggable.style.transform = null;
+    setSP('--msger-width', '25%');
+    setSP('--msger-height', '100%');
 }
 
 /**
@@ -6829,16 +7294,93 @@ function captionMinimize() {
     elemDisplay(captionMinBtn, false);
     elemDisplay(captionMaxBtn, true);
     captionCenter();
-    setSP('--caption-width', '420px');
-    setSP('--caption-height', '680px');
+    if (!isCaptionPinned) {
+        if (isMobileDevice) {
+            setSP('--caption-width', '99%');
+            setSP('--caption-height', '99%');
+        } else {
+            setSP('--caption-width', '420px');
+            setSP('--caption-height', '680px');
+        }
+    } else {
+        setSP('--caption-width', '25%');
+        setSP('--caption-height', '100%');
+    }
 }
 
 /**
- * Set caption position
+ * Set chat position
  */
 function captionCenter() {
+    if (!isCaptionPinned) {
+        captionDraggable.style.top = '50%';
+        captionDraggable.style.left = '50%';
+    }
+}
+
+/**
+ * Toggle Caption Pin
+ */
+function toggleCaptionPin() {
+    if (isChatPinned) {
+        return userLog('toast', 'Please unpin the Chat that appears to be currently pinned');
+    }
+    isCaptionPinned ? captionUnpin() : captionPin();
+    playSound('click');
+}
+
+/**
+ * Handle caption pin
+ */
+function captionPin() {
+    videoMediaContainerPin();
+    captionPinned();
+    isCaptionPinned = true;
+    setColor(captionTogglePin, 'lime');
+    resizeVideoMedia();
+    captionDraggable.style.resize = 'none';
+    if (!isMobileDevice) undragElement(captionDraggable, captionHeader);
+}
+
+/**
+ * Handle caption unpin
+ */
+function captionUnpin() {
+    videoMediaContainerUnpin();
+    setSP('--caption-width', '420px');
+    setSP('--caption-height', '680px');
+    elemDisplay(captionMinBtn, false);
+    buttons.caption.showMaxBtn && elemDisplay(captionMaxBtn, true);
+    captionRightCenter();
+    isCaptionPinned = false;
+    setColor(captionTogglePin, 'white');
+    resizeVideoMedia();
+    captionDraggable.style.resize = 'both';
+    if (!isMobileDevice) dragElement(captionDraggable, captionHeader);
+}
+
+/**
+ * Move Caption center right
+ */
+function captionRightCenter() {
+    captionDraggable.style.position = 'fixed';
+    captionDraggable.style.display = 'flex';
     captionDraggable.style.top = '50%';
-    captionDraggable.style.left = '50%';
+    captionDraggable.style.left = isMobileDevice ? '50%' : '75%';
+    captionDraggable.style.transform = 'translate(-50%, -50%)';
+}
+
+/**
+ * Caption is pinned
+ */
+function captionPinned() {
+    captionDraggable.style.position = 'absolute';
+    captionDraggable.style.top = 0;
+    captionDraggable.style.right = 0;
+    captionDraggable.style.left = null;
+    captionDraggable.style.transform = null;
+    setSP('--caption-width', '25%');
+    setSP('--caption-height', '100%');
 }
 
 /**
@@ -6907,6 +7449,9 @@ function cleanCaptions() {
  * Hide chat room and emoji picker
  */
 function hideChatRoomAndEmojiPicker() {
+    if (isChatPinned) {
+        chatUnpin();
+    }
     elemDisplay(msgerDraggable, false);
     elemDisplay(msgerEmojiPicker, false);
     setColor(msgerEmojiBtn, '#FFFFFF');
@@ -6920,6 +7465,9 @@ function hideChatRoomAndEmojiPicker() {
  * Hide chat room and emoji picker
  */
 function hideCaptionBox() {
+    if (isCaptionPinned) {
+        captionUnpin();
+    }
     elemDisplay(captionDraggable, false);
     captionBtn.className = className.captionOn;
     isCaptionBoxVisible = false;
@@ -7797,13 +8345,13 @@ function setMyHandStatus() {
         // Raise hand
         setColor(myHandBtn, 'green');
         elemDisplay(myHandStatusIcon, true);
-        setTippy(myHandBtn, 'Raise your hand', placement);
+        setTippy(myHandBtn, 'Raise your hand', bottomButtonsPlacement);
         playSound('raiseHand');
     } else {
         // Lower hand
         setColor(myHandBtn, 'black');
         elemDisplay(myHandStatusIcon, false);
-        setTippy(myHandBtn, 'Lower your hand', placement);
+        setTippy(myHandBtn, 'Lower your hand', bottomButtonsPlacement);
     }
     emitPeerStatus('hand', myHandStatus);
 }
@@ -7820,7 +8368,7 @@ function setMyAudioStatus(status) {
     // send my audio status to all peers in the room
     emitPeerStatus('audio', status);
     setTippy(myAudioStatusIcon, status ? 'My audio is on' : 'My audio is off', 'bottom');
-    setTippy(audioBtn, status ? 'Stop the audio' : 'Start the audio', placement);
+    setTippy(audioBtn, status ? 'Stop the audio' : 'Start the audio', bottomButtonsPlacement);
     status ? playSound('on') : playSound('off');
 }
 
@@ -7844,7 +8392,7 @@ function setMyVideoStatus(status) {
 
     if (!isMobileDevice) {
         if (myVideoStatusIcon) setTippy(myVideoStatusIcon, status ? 'My video is on' : 'My video is off', 'bottom');
-        setTippy(videoBtn, status ? 'Stop the video' : 'Start the video', placement);
+        setTippy(videoBtn, status ? 'Stop the video' : 'Start the video', bottomButtonsPlacement);
     }
 
     if (status) {
@@ -8170,10 +8718,11 @@ function handleEmoji(message, duration = 5000) {
         const emojiDisplay = document.createElement('div');
         emojiDisplay.className = 'animate__animated animate__backInUp';
         emojiDisplay.style.padding = '10px';
-        emojiDisplay.style.fontSize = '3vh';
+        emojiDisplay.style.fontSize = '2vh';
         emojiDisplay.style.color = '#FFF';
         emojiDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
         emojiDisplay.style.borderRadius = '10px';
+        emojiDisplay.style.marginBottom = '5px';
         emojiDisplay.innerText = `${message.emoji} ${message.peer_name}`;
         userEmoji.appendChild(emojiDisplay);
         setTimeout(() => {
@@ -8534,6 +9083,29 @@ function handleWhiteboardToggle() {
 }
 
 /**
+ * Toggle Lock/Unlock whiteboard
+ */
+function toggleLockUnlockWhiteboard() {
+    wbIsLock = !wbIsLock;
+
+    const btnToShow = wbIsLock ? whiteboardUnlockBtn : whiteboardLockBtn;
+    const btnToHide = wbIsLock ? whiteboardLockBtn : whiteboardUnlockBtn;
+    const btnColor = wbIsLock ? 'red' : 'white';
+    const action = wbIsLock ? 'lock' : 'unlock';
+
+    elemDisplay(btnToShow, true, 'flex');
+    elemDisplay(btnToHide, false);
+    setColor(whiteboardUnlockBtn, btnColor);
+
+    whiteboardAction(getWhiteboardAction(action));
+
+    if (wbIsLock) {
+        userLog('toast', 'The whiteboard is locked. \n The participants cannot interact with it.');
+        playSound('locked');
+    }
+}
+
+/**
  * Whiteboard: Show-Hide
  */
 function toggleWhiteboard() {
@@ -8685,81 +9257,16 @@ function whiteboardAddObj(type) {
             });
             break;
         case 'imgFile':
-            Swal.fire({
-                allowOutsideClick: false,
-                background: swBg,
-                position: 'center',
-                title: 'Select image',
-                input: 'file',
-                inputAttributes: {
-                    accept: wbImageInput,
-                    'aria-label': 'Select image',
-                },
-                showDenyButton: true,
-                confirmButtonText: `OK`,
-                denyButtonText: `Cancel`,
-                showClass: { popup: 'animate__animated animate__fadeInDown' },
-                hideClass: { popup: 'animate__animated animate__fadeOutUp' },
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    let wbCanvasImg = result.value;
-                    if (wbCanvasImg && wbCanvasImg.size > 0) {
-                        let reader = new FileReader();
-                        reader.onload = function (event) {
-                            let imgObj = new Image();
-                            imgObj.src = event.target.result;
-                            imgObj.onload = function () {
-                                let image = new fabric.Image(imgObj);
-                                image.set({ top: 0, left: 0 }).scale(0.3);
-                                addWbCanvasObj(image);
-                            };
-                        };
-                        reader.readAsDataURL(wbCanvasImg);
-                    } else {
-                        userLog('error', 'File not selected or empty');
-                    }
-                }
-            });
+            setupFileSelection('Select the image', wbImageInput, renderImageToCanvas);
             break;
         case 'pdfFile':
-            Swal.fire({
-                allowOutsideClick: false,
-                background: swBg,
-                position: 'center',
-                title: 'Select the PDF',
-                input: 'file',
-                inputAttributes: {
-                    accept: wbPdfInput,
-                    'aria-label': 'Select the PDF',
-                },
-                showDenyButton: true,
-                confirmButtonText: `OK`,
-                denyButtonText: `Cancel`,
-                showClass: { popup: 'animate__animated animate__fadeInDown' },
-                hideClass: { popup: 'animate__animated animate__fadeOutUp' },
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    let wbCanvasPdf = result.value;
-                    if (wbCanvasPdf && wbCanvasPdf.size > 0) {
-                        let reader = new FileReader();
-                        reader.onload = async function (event) {
-                            wbCanvas.requestRenderAll();
-                            await pdfToImage(event.target.result, wbCanvas);
-                            whiteboardIsDrawingMode(false);
-                            wbCanvasToJson();
-                        };
-                        reader.readAsDataURL(wbCanvasPdf);
-                    } else {
-                        userLog('error', 'File not selected or empty', 'top-end');
-                    }
-                }
-            });
+            setupFileSelection('Select the PDF', wbPdfInput, renderPdfToCanvas);
             break;
         case 'text':
             const text = new fabric.IText('Lorem Ipsum', {
                 top: 0,
                 left: 0,
-                fontFamily: 'Comfortaa',
+                fontFamily: 'Montserrat',
                 fill: wbCanvas.freeDrawingBrush.color,
                 strokeWidth: wbCanvas.freeDrawingBrush.width,
                 stroke: wbCanvas.freeDrawingBrush.color,
@@ -8811,6 +9318,120 @@ function whiteboardAddObj(type) {
             break;
         default:
             break;
+    }
+}
+
+/**
+ * Setup Canvas file selections
+ * @param {string} title
+ * @param {string} accept
+ * @param {object} renderToCanvas
+ */
+function setupFileSelection(title, accept, renderToCanvas) {
+    Swal.fire({
+        allowOutsideClick: false,
+        background: swBg,
+        position: 'center',
+        title: title,
+        input: 'file',
+        html: `
+        <div id="dropArea">
+            <p>Drag and drop your file here</p>
+        </div>
+        `,
+        inputAttributes: {
+            accept: accept,
+            'aria-label': title,
+        },
+        didOpen: () => {
+            const dropArea = document.getElementById('dropArea');
+            dropArea.addEventListener('dragenter', handleDragEnter);
+            dropArea.addEventListener('dragover', handleDragOver);
+            dropArea.addEventListener('dragleave', handleDragLeave);
+            dropArea.addEventListener('drop', handleDrop);
+        },
+        showDenyButton: true,
+        confirmButtonText: `OK`,
+        denyButtonText: `Cancel`,
+        showClass: { popup: 'animate__animated animate__fadeInDown' },
+        hideClass: { popup: 'animate__animated animate__fadeOutUp' },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            renderToCanvas(result.value);
+        }
+    });
+
+    function handleDragEnter(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.target.style.background = 'var(--body-bg)';
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.target.style.background = '';
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+        e.target.style.background = '';
+    }
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            console.log('Selected file:', file);
+            Swal.close();
+            renderToCanvas(file);
+        }
+    }
+}
+
+/**
+ * Render Image file to Canvas
+ * @param {object} wbCanvasImg
+ */
+function renderImageToCanvas(wbCanvasImg) {
+    if (wbCanvasImg && wbCanvasImg.size > 0) {
+        let reader = new FileReader();
+        reader.onload = function (event) {
+            let imgObj = new Image();
+            imgObj.src = event.target.result;
+            imgObj.onload = function () {
+                let image = new fabric.Image(imgObj);
+                image.set({ top: 0, left: 0 }).scale(0.3);
+                addWbCanvasObj(image);
+            };
+        };
+        reader.readAsDataURL(wbCanvasImg);
+    }
+}
+
+/**
+ * Render PDF file to Canvas
+ * @param {object} wbCanvasPdf
+ */
+async function renderPdfToCanvas(wbCanvasPdf) {
+    if (wbCanvasPdf && wbCanvasPdf.size > 0) {
+        let reader = new FileReader();
+        reader.onload = async function (event) {
+            wbCanvas.requestRenderAll();
+            await pdfToImage(event.target.result, wbCanvas);
+            whiteboardIsDrawingMode(false);
+            wbCanvasToJson();
+        };
+        reader.readAsDataURL(wbCanvasPdf);
     }
 }
 
@@ -9321,6 +9942,26 @@ function abortFileTransfer() {
 }
 
 /**
+ * Abort file transfer
+ */
+function abortReceiveFileTransfer() {
+    sendToServer('fileReceiveAbort', {
+        room_id: roomId,
+        peer_name: myPeerName,
+    });
+}
+
+/**
+ * Handle abort file transfer
+ * @param object config - peer info that abort the file transfer
+ */
+function handleAbortFileTransfer(config) {
+    console.log(`File transfer aborted by ${config.peer_name}`);
+    userLog('toast', `⚠️ File transfer aborted by ${config.peer_name}`);
+    abortFileTransfer();
+}
+
+/**
  * File Transfer aborted by peer
  */
 function handleFileAbort() {
@@ -9341,7 +9982,7 @@ function hideFileTransfer() {
 }
 
 /**
- * Select the File to Share
+ * Select or Drag and Drop the File to Share
  * @param {string} peer_id
  * @param {boolean} broadcast send to all (default false)
  */
@@ -9356,9 +9997,21 @@ function selectFileToShare(peer_id, broadcast = false) {
         position: 'center',
         title: 'Share file',
         input: 'file',
+        html: `
+        <div id="dropArea">
+            <p>Drag and drop your file here</p>
+        </div>
+        `,
         inputAttributes: {
             accept: fileSharingInput,
             'aria-label': 'Select file',
+        },
+        didOpen: () => {
+            const dropArea = getId('dropArea');
+            dropArea.addEventListener('dragenter', handleDragEnter);
+            dropArea.addEventListener('dragover', handleDragOver);
+            dropArea.addEventListener('dragleave', handleDragLeave);
+            dropArea.addEventListener('drop', handleDrop);
         },
         showDenyButton: true,
         confirmButtonText: `Send`,
@@ -9370,6 +10023,42 @@ function selectFileToShare(peer_id, broadcast = false) {
             sendFileInformations(result.value, peer_id, broadcast);
         }
     });
+
+    function handleDragEnter(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.target.style.background = 'var(--body-bg)';
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.target.style.background = '';
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+        e.target.style.background = '';
+    }
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            console.log('Selected file:', file);
+            Swal.close();
+            sendFileInformations(file, peer_id, broadcast);
+        }
+    }
 }
 
 /**
@@ -9838,7 +10527,7 @@ function showAbout() {
     Swal.fire({
         background: swBg,
         position: 'center',
-        title: '<strong>WebRTC P2P</strong>',
+        title: '<strong>WebRTC P2P v1.3.75</strong>',
         imageAlt: 'mirotalk-about',
         imageUrl: images.about,
         customClass: { image: 'img-about' },
@@ -9848,11 +10537,10 @@ function showAbout() {
             <button 
                 id="support-button" 
                 data-umami-event="Support button" 
-                class="pulsate" 
                 onclick="window.open('https://codecanyon.net/user/miroslavpejic85')">
                 <i class="${className.heart}" ></i>&nbsp;Support
             </button>
-            <br /><br />
+            <br /><br /><br />
             Author:<a 
                 id="linkedin-button" 
                 data-umami-event="Linkedin button" 
@@ -9866,6 +10554,10 @@ function showAbout() {
                 href="mailto:miroslav.pejic.85@gmail.com?subject=MiroTalk P2P info"> 
                 miroslav.pejic.85@gmail.com
             </a>
+            <br /><br />
+            <hr />
+            <span>&copy; 2024 MiroTalk P2P, all rights reserved</span>
+            <hr />
         </div>
         `,
         showClass: { popup: 'animate__animated animate__fadeInDown' },
@@ -9964,6 +10656,21 @@ function dragElement(elmnt, dragObj) {
 }
 
 /**
+ * Make Obj Undraggable
+ * @param {object} elmnt father element
+ * @param {object} dragObj children element to make father undraggable
+ */
+function undragElement(elmnt, dragObj) {
+    if (dragObj) {
+        dragObj.onmousedown = null;
+    } else {
+        elmnt.onmousedown = null;
+    }
+    elmnt.style.top = '';
+    elmnt.style.left = '';
+}
+
+/**
  * Date Format: https://convertio.co/it/
  * @returns {string} date string format: DD-MM-YYYY-H_M_S
  */
@@ -9991,16 +10698,28 @@ function bytesToSize(bytes) {
  * @param {object} data peer audio
  */
 function handlePeerVolume(data) {
-    if (!isAudioPitchBar) return;
-    const peer_id = data.peer_id;
+    const { peer_id, volume } = data;
+
+    let audioColorTmp = '#19bb5c';
+    if ([50, 60, 70].includes(volume)) audioColorTmp = '#FFA500'; // Orange
+    if ([80, 90, 100].includes(volume)) audioColorTmp = '#FF0000'; // Red
+
+    if (!isAudioPitchBar) {
+        const remotePeerAvatarImg = getId(peer_id + '_avatar');
+        if (remotePeerAvatarImg) {
+            applyBoxShadowEffect(remotePeerAvatarImg, audioColorTmp, 100);
+        }
+        const remotePeerVideo = getId(peer_id + '___video');
+        if (remotePeerVideo && remotePeerVideo.classList.contains('videoCircle')) {
+            applyBoxShadowEffect(remotePeerVideo, audioColorTmp, 100);
+        }
+        return;
+    }
+
     const remotePitchBar = getId(peer_id + '_pitch_bar');
     //let remoteVideoWrap = getId(peer_id + '_videoWrap');
     if (!remotePitchBar) return;
-
-    const volume = data.volume;
-    if (volume > 50) {
-        remotePitchBar.style.backgroundColor = 'orange';
-    }
+    remotePitchBar.style.backgroundColor = audioColorTmp;
     remotePitchBar.style.height = volume + '%';
     //remoteVideoWrap.classList.toggle('speaking');
     setTimeout(function () {
@@ -10015,12 +10734,23 @@ function handlePeerVolume(data) {
  * @param {object} data my audio
  */
 function handleMyVolume(data) {
-    if (!isAudioPitchBar || !myPitchBar) return;
+    const { volume } = data;
 
-    const volume = data.volume;
-    if (volume > 50) {
-        myPitchBar.style.backgroundColor = 'orange';
+    let audioColorTmp = '#19bb5c';
+    if ([50, 60, 70].includes(volume)) audioColorTmp = '#FFA500'; // Orange
+    if ([80, 90, 100].includes(volume)) audioColorTmp = '#FF0000'; // Red
+
+    if (!isAudioPitchBar || !myPitchBar) {
+        const localPeerAvatarImg = getId('myVideoAvatarImage');
+        if (localPeerAvatarImg) {
+            applyBoxShadowEffect(localPeerAvatarImg, audioColorTmp, 100);
+        }
+        if (myVideo && myVideo.classList.contains('videoCircle')) {
+            applyBoxShadowEffect(myVideo, audioColorTmp, 100);
+        }
+        return;
     }
+    myPitchBar.style.backgroundColor = audioColorTmp;
     myPitchBar.style.height = volume + '%';
     //myVideoWrap.classList.toggle('speaking');
     setTimeout(function () {
@@ -10028,6 +10758,21 @@ function handleMyVolume(data) {
         myPitchBar.style.height = '0%';
         //myVideoWrap.classList.toggle('speaking');
     }, 100);
+}
+
+/**
+ * Apply Box Shadow effect to element
+ * @param {object} element
+ * @param {string} color
+ * @param {integer} delay ms
+ */
+function applyBoxShadowEffect(element, color, delay = 200) {
+    if (element) {
+        element.style.boxShadow = `0 0 20px ${color}`;
+        setTimeout(() => {
+            element.style.boxShadow = 'none';
+        }, delay);
+    }
 }
 
 /**
@@ -10046,7 +10791,7 @@ function userLog(type, message, timer = 3000) {
                 icon: type,
                 title: type,
                 text: message,
-                showClass: { popup: 'animate__animated animate__rubberBand' },
+                showClass: { popup: 'animate__animated animate__fadeInDown' },
                 hideClass: { popup: 'animate__animated animate__fadeOutUp' },
             });
             playSound('alert');
@@ -10085,7 +10830,7 @@ function userLog(type, message, timer = 3000) {
             });
             Toast.fire({
                 icon: 'info',
-                title: message,
+                html: message,
                 showClass: { popup: 'animate__animated animate__fadeInDown' },
                 hideClass: { popup: 'animate__animated animate__fadeOutUp' },
             });
@@ -10343,4 +11088,13 @@ function sanitizeXSS(src) {
  */
 function disable(elem, disabled) {
     elem.disabled = disabled;
+}
+
+/**
+ * Sleep in ms
+ * @param {integer} ms milleseconds
+ * @returns Promise
+ */
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }

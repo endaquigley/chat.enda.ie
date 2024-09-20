@@ -9,7 +9,6 @@ http://patorjk.com/software/taag/#p=display&f=ANSI%20Regular&t=Server
 
 dependencies: {
     @sentry/node            : https://www.npmjs.com/package/@sentry/node
-    @sentry/integrations    : https://www.npmjs.com/package/@sentry/integrations
     axios                   : https://www.npmjs.com/package/axios
     body-parser             : https://www.npmjs.com/package/body-parser
     compression             : https://www.npmjs.com/package/compression
@@ -20,6 +19,7 @@ dependencies: {
     express                 : https://www.npmjs.com/package/express
     express-openid-connect  : https://www.npmjs.com/package/express-openid-connect
     jsonwebtoken            : https://www.npmjs.com/package/jsonwebtoken
+    js-yaml                 : https://www.npmjs.com/package/js-yaml
     ngrok                   : https://www.npmjs.com/package/ngrok
     qs                      : https://www.npmjs.com/package/qs
     openai                  : https://www.npmjs.com/package/openai
@@ -27,7 +27,6 @@ dependencies: {
     swagger                 : https://www.npmjs.com/package/swagger-ui-express
     uuid                    : https://www.npmjs.com/package/uuid
     xss                     : https://www.npmjs.com/package/xss
-    yamljs                  : https://www.npmjs.com/package/yamljs
 }
 */
 
@@ -40,7 +39,7 @@ dependencies: {
  * @license For commercial use or closed source, contact us at license.mirotalk@gmail.com or purchase directly from CodeCanyon
  * @license CodeCanyon: https://codecanyon.net/item/mirotalk-p2p-webrtc-realtime-video-conferences/38376661
  * @author  Miroslav Pejic - miroslav.pejic.85@gmail.com
- * @version 1.3.32
+ * @version 1.3.75
  *
  */
 
@@ -59,6 +58,7 @@ const path = require('path');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const app = express();
+const fs = require('fs');
 const checkXSS = require('./xss.js');
 const ServerApi = require('./api');
 const Host = require('./host');
@@ -80,8 +80,6 @@ const authHost = new Host(); // Authenticated IP by Login
 let server;
 
 if (isHttps) {
-    const fs = require('fs');
-
     // Define paths to the SSL key and certificate files
     const keyPath = path.join(__dirname, '../ssl/key.pem');
     const certPath = path.join(__dirname, '../ssl/cert.pem');
@@ -173,9 +171,9 @@ const roomPresentersString = process.env.PRESENTERS || '["MiroTalk P2P"]';
 const roomPresenters = JSON.parse(roomPresentersString);
 
 // Swagger config
-const yamlJS = require('yamljs');
+const yaml = require('js-yaml');
 const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = yamlJS.load(path.join(__dirname + '/../api/swagger.yaml'));
+const swaggerDocument = yaml.load(fs.readFileSync(path.join(__dirname, '/../api/swagger.yaml'), 'utf8'));
 
 // Api config
 const { v4: uuidV4 } = require('uuid');
@@ -223,7 +221,6 @@ const redirectURL = process.env.REDIRECT_URL || '/newcall';
 
 // Sentry config
 const Sentry = require('@sentry/node');
-const { CaptureConsole } = require('@sentry/integrations');
 const sentryEnabled = getEnvBoolean(process.env.SENTRY_ENABLED);
 const sentryDSN = process.env.SENTRY_DSN;
 const sentryTracesSampleRate = process.env.SENTRY_TRACES_SAMPLE_RATE;
@@ -240,9 +237,8 @@ if (sentryEnabled) {
     Sentry.init({
         dsn: sentryDSN,
         integrations: [
-            new CaptureConsole({
-                // array of methods that should be captured
-                // defaults to ['log', 'info', 'warn', 'error', 'debug', 'assert']
+            Sentry.captureConsoleIntegration({
+                // ['log', 'info', 'warn', 'error', 'debug', 'assert']
                 levels: ['warn', 'error'],
             }),
         ],
@@ -538,7 +534,7 @@ app.get('/join/', async (req, res) => {
 
         const allowRoomAccess = isAllowedRoomAccess('/join/params', req, hostCfg, authHost, peers, room);
 
-        if (!allowRoomAccess) {
+        if (!allowRoomAccess && !token) {
             return res.status(401).json({ message: 'Direct Room Join Unauthorized' });
         }
 
@@ -1509,6 +1505,13 @@ io.sockets.on('connect', async (socket) => {
 
         log.debug('[' + socket.id + '] Peer [' + peer_name + '] send fileAbort to room_id [' + room_id + ']');
         await sendToRoom(room_id, socket.id, 'fileAbort');
+    });
+
+    socket.on('fileReceiveAbort', async (cfg) => {
+        const config = checkXSS(cfg);
+        const { room_id, peer_name } = config;
+        log.debug('[' + socket.id + '] Peer [' + peer_name + '] send fileReceiveAbort to room_id [' + room_id + ']');
+        await sendToRoom(room_id, socket.id, 'fileReceiveAbort', config);
     });
 
     /**

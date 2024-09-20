@@ -2,7 +2,15 @@
 
 <br />
 
-<p align="center">Free WebRTC - P2P - Simple, Secure, Fast Real-Time Video Conferences with support for up to 4k resolution and 60fps. It's compatible with all major browsers and platforms.</p>
+<div align="center">
+
+<a href="">[![Author](https://img.shields.io/badge/Author-miroslav-brightgreen.svg)](https://www.linkedin.com/in/miroslav-pejic-976a07101/)</a>
+<a href="">![License: AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue.svg)</a>
+<a href="">[![Community](https://img.shields.io/badge/Community-forum-pink.svg)](https://discord.gg/rgGYfeYW3N)</a>
+
+</div>
+
+<p align="center">Free WebRTC - P2P - Simple, Secure, Fast Real-Time Video Conferences with support for up to 8k resolution and 60fps. It's compatible with all major browsers and platforms.</p>
 
 <hr />
 
@@ -45,7 +53,7 @@
 -   Screen sharing for presentations.
 -   File sharing with drag-and-drop support.
 -   Choose your audio input, output, and video source.
--   Supports video quality up to 4K and 60 FPS.
+-   Supports video quality up to 8K and 60 FPS.
 -   Supports advance Picture-in-Picture (PiP) offering a more streamlined and flexible viewing experience.
 -   Record your screen, audio, and video.
 -   Snapshot video frames and save them as PNG images.
@@ -131,16 +139,16 @@ When [host protection](https://docs.mirotalk.com/mirotalk-p2p/host-protection/) 
 
 </details>
 
-<details>
+<details open>
 <summary>Embed a meeting</summary>
 
 <br/>
 
-To embed a meeting in `your service or app` using an iframe, use the following code:
+To embed a meeting within `your service or app` using an iframe, you can use the following code:
 
 ```html
 <iframe
-    allow="camera; microphone; display-capture; fullscreen; clipboard-read; clipboard-write; autoplay"
+    allow="camera; microphone; display-capture; fullscreen; clipboard-read; clipboard-write; web-share; autoplay"
     src="https://p2p.mirotalk.com/newcall"
     style="height: 100vh; width: 100vw; border: 0px;"
 ></iframe>
