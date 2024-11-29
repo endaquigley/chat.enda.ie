@@ -534,92 +534,12 @@ app.get(['/test'], (req, res) => {
 
 // Handle Direct join room with params
 app.get('/join/', async (req, res) => {
-    if (Object.keys(req.query).length > 0) {
-        log.debug('Request Query', req.query);
-        /* 
-            http://localhost:3000/join?room=test&name=mirotalk&audio=1&video=1&screen=0&notify=0&hide=0
-            https://p2p.mirotalk.com/join?room=test&name=mirotalk&audio=1&video=1&screen=0&notify=0&hide=0
-            https://mirotalk.up.railway.app/join?room=test&name=mirotalk&audio=1&video=1&screen=0&notify=0&hide=0
-        */
-        const { room, name, audio, video, screen, notify, hide, token } = checkXSS(req.query);
-
-        const allowRoomAccess = isAllowedRoomAccess('/join/params', req, hostCfg, peers, room);
-
-        if (!allowRoomAccess && !token) {
-            return res.status(401).json({ message: 'Direct Room Join Unauthorized' });
-        }
-
-        let peerUsername,
-            peerPassword = '';
-        let isPeerValid = false;
-        let isPeerPresenter = false;
-
-        if (token) {
-            try {
-                // Check if valid JWT token
-                const validToken = await isValidToken(token);
-
-                // Not valid token
-                if (!validToken) {
-                    return res.status(401).json({ message: 'Invalid Token' });
-                }
-
-                const { username, password, presenter } = checkXSS(decodeToken(token));
-                // Peer credentials
-                peerUsername = username;
-                peerPassword = password;
-                // Check if valid peer
-                isPeerValid = isAuthPeer(username, password);
-                // Check if presenter
-                isPeerPresenter = presenter === '1' || presenter === 'true';
-            } catch (err) {
-                // Invalid token
-                log.error('Direct Join JWT error', err.message);
-                return hostCfg.protected || hostCfg.user_auth ? res.sendFile(views.login) : res.sendFile(views.landing);
-            }
-        }
-
-        const OIDCUserAuthenticated = OIDC.enabled && req.oidc.isAuthenticated();
-
-        // Peer valid going to auth as host
-        if ((hostCfg.protected && isPeerValid && isPeerPresenter && !hostCfg.authenticated) || OIDCUserAuthenticated) {
-            const ip = getIP(req);
-            hostCfg.authenticated = true;
-            authHost.setAuthorizedIP(ip, true);
-            log.debug('Direct Join user auth as host done', {
-                ip: ip,
-                username: peerUsername,
-                password: peerPassword,
-            });
-        }
-
-        // Check if peer authenticated or valid
-        if (room && (hostCfg.authenticated || isPeerValid)) {
-            // only room mandatory
-            return res.redirect('/join/boardgames');
-        } else {
-            return res.redirect('/join/boardgames');
-        }
-    }
+    res.redirect('/join/boardgames');
 });
 
 // Join Room by id
 app.get('/join/boardgames', function (req, res) {
-    //
-    const { roomId } = req.params;
-
-    if (!roomId) {
-        log.warn('/join/:roomId empty', roomId);
-        return res.redirect('/');
-    }
-
-    const allowRoomAccess = isAllowedRoomAccess('/join/boardgames', req, hostCfg, peers, roomId);
-
-    if (allowRoomAccess) {
-        res.sendFile(views.client);
-    } else {
-        !OIDC.enabled && hostCfg.protected ? res.redirect('/join/boardgames') : res.redirect('/join/boardgames');
-    }
+    res.sendFile(views.client);
 });
 
 // Not specified correctly the room id
