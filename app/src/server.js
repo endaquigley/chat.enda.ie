@@ -8,9 +8,9 @@ http://patorjk.com/software/taag/#p=display&f=ANSI%20Regular&t=Server
 ███████ ███████ ██   ██   ████   ███████ ██   ██                                           
 
 dependencies: {
+    @mattermost/client      : https://www.npmjs.com/package/@mattermost/client
     @sentry/node            : https://www.npmjs.com/package/@sentry/node
     axios                   : https://www.npmjs.com/package/axios
-    body-parser             : https://www.npmjs.com/package/body-parser
     compression             : https://www.npmjs.com/package/compression
     colors                  : https://www.npmjs.com/package/colors
     cors                    : https://www.npmjs.com/package/cors
@@ -39,7 +39,7 @@ dependencies: {
  * @license For commercial use or closed source, contact us at license.mirotalk@gmail.com or purchase directly from CodeCanyon
  * @license CodeCanyon: https://codecanyon.net/item/mirotalk-p2p-webrtc-realtime-video-conferences/38376661
  * @author  Miroslav Pejic - miroslav.pejic.85@gmail.com
- * @version 1.3.75
+ * @version 1.3.94
  *
  */
 
@@ -61,6 +61,7 @@ const app = express();
 const fs = require('fs');
 const checkXSS = require('./xss.js');
 const ServerApi = require('./api');
+const mattermostCli = require('./mattermost.js');
 const Host = require('./host');
 const Logs = require('./logs');
 const log = new Logs('server');
@@ -230,7 +231,6 @@ const CryptoJS = require('crypto-js');
 const qS = require('qs');
 const slackEnabled = getEnvBoolean(process.env.SLACK_ENABLED);
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET;
-const bodyParser = require('body-parser');
 
 // Setup sentry client
 if (sentryEnabled) {
@@ -271,6 +271,16 @@ if (configChatGPT.enabled) {
         log.warning('ChatGPT seems enabled, but you missing the apiKey!');
     }
 }
+
+// Mattermost config
+const mattermostCfg = {
+    enabled: getEnvBoolean(process.env.MATTERMOST_ENABLED),
+    server_url: process.env.MATTERMOST_SERVER_URL,
+    username: process.env.MATTERMOST_USERNAME,
+    password: process.env.MATTERMOST_PASSWORD,
+    token: process.env.MATTERMOST_TOKEN,
+    api_disabled: api_disabled,
+};
 
 // IP Whitelist
 const ipWhitelist = {
@@ -319,7 +329,6 @@ function OIDCAuth(req, res, next) {
                     log.debug('[OIDC] ------> Host protected', {
                         authenticated: hostCfg.authenticated,
                         authorizedIPs: authHost.getAuthorizedIPs(),
-                        activeRoom: authHost.isRoomActive(),
                     });
                 }
                 next();
@@ -361,11 +370,11 @@ const sockets = {}; // collect sockets
 const peers = {}; // collect peers info grp by channels
 const presenters = {}; // collect presenters grp by channels
 
+app.use(express.static(dir.public)); // Use all static files from the public folder
 app.use(cors(corsOptions)); // Enable CORS with options
 app.use(compression()); // Compress all HTTP responses using GZip
-app.use(express.json()); // Api parse body data as json
-app.use(express.static(dir.public)); // Use all static files from the public folder
-app.use(bodyParser.urlencoded({ extended: true })); // Need for Slack API body parser
+app.use(express.json()); // Parse JSON bodies
+app.use(express.urlencoded({ extended: false })); // Parse URL-encoded bodies
 app.use(apiBasePath + '/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument)); // api docs
 
 // Restrict access to specified IP
@@ -391,6 +400,9 @@ app.use((req, res, next) => {
     });
     next();
 });
+
+// Mattermost
+const mattermost = new mattermostCli(app, mattermostCfg);
 
 // POST start from here...
 app.post('*', function (next) {
@@ -457,7 +469,6 @@ app.get('/logout', (req, res) => {
             log.debug('[OIDC] ------> Logout', {
                 authenticated: hostCfg.authenticated,
                 authorizedIPs: authHost.getAuthorizedIPs(),
-                activeRoom: authHost.isRoomActive(),
             });
         }
         req.logout(); // Logout user
@@ -467,7 +478,7 @@ app.get('/logout', (req, res) => {
 
 // main page
 app.get(['/'], OIDCAuth, (req, res) => {
-    if ((!OIDC.enabled && hostCfg.protected && !hostCfg.authenticated) || authHost.isRoomActive()) {
+    if (!OIDC.enabled && hostCfg.protected) {
         const ip = getIP(req);
         if (allowedIP(ip)) {
             res.redirect('/join/boardgames');
@@ -483,7 +494,7 @@ app.get(['/'], OIDCAuth, (req, res) => {
 
 // set new room name and join
 app.get(['/newcall'], OIDCAuth, (req, res) => {
-    if ((!OIDC.enabled && hostCfg.protected && !hostCfg.authenticated) || authHost.isRoomActive()) {
+    if (!OIDC.enabled && hostCfg.protected) {
         const ip = getIP(req);
         if (allowedIP(ip)) {
             res.redirect('/join/boardgames');
@@ -532,7 +543,7 @@ app.get('/join/', async (req, res) => {
         */
         const { room, name, audio, video, screen, notify, hide, token } = checkXSS(req.query);
 
-        const allowRoomAccess = isAllowedRoomAccess('/join/params', req, hostCfg, authHost, peers, room);
+        const allowRoomAccess = isAllowedRoomAccess('/join/params', req, hostCfg, peers, room);
 
         if (!allowRoomAccess && !token) {
             return res.status(401).json({ message: 'Direct Room Join Unauthorized' });
@@ -595,17 +606,19 @@ app.get('/join/', async (req, res) => {
 // Join Room by id
 app.get('/join/boardgames', function (req, res) {
     //
-    const allowRoomAccess = isAllowedRoomAccess('/join/boardgames', req, hostCfg, authHost, peers, req.params.roomId);
+    const { roomId } = req.params;
+
+    if (!roomId) {
+        log.warn('/join/:roomId empty', roomId);
+        return res.redirect('/');
+    }
+
+    const allowRoomAccess = isAllowedRoomAccess('/join/boardgames', req, hostCfg, peers, roomId);
 
     if (allowRoomAccess) {
-        if (hostCfg.protected) authHost.setRoomActive();
-
         res.sendFile(views.client);
     } else {
-        if (!OIDC.enabled && hostCfg.protected) {
-            return res.redirect('/join/boardgames');
-        }
-        res.redirect('/join/boardgames');
+        !OIDC.enabled && hostCfg.protected ? res.redirect('/join/boardgames') : res.redirect('/join/boardgames');
     }
 });
 
@@ -787,7 +800,7 @@ app.post([`${apiBasePath}/join`], (req, res) => {
     https://api.slack.com/authentication/verifying-requests-from-slack
 */
 
-//Slack request meeting room endpoint
+// Slack request meeting room endpoint
 app.post('/slack', (req, res) => {
     if (!slackEnabled) return res.end('`Under maintenance` - Please check back soon.');
 
@@ -845,35 +858,54 @@ app.get('*', function (req, res) {
  */
 function getServerConfig(tunnel = false) {
     return {
-        iceServers: iceServers,
-        stats: statsData,
-        oidc: OIDC.enabled ? OIDC : false,
-        host: hostCfg,
-        jwtCfg: jwtCfg,
-        presenters: roomPresenters,
-        ip_whitelist: ipWhitelist,
-        ngrok: {
-            ngrok_enabled: ngrokEnabled,
-            ngrok_token: ngrokEnabled ? ngrokAuthToken : '',
-        },
-        cors: corsOptions,
-        server_tunnel: tunnel,
+        // General Server Information
         server: host,
-        test_ice_servers: testStunTurn,
+        server_tunnel: tunnel,
         api_docs: api_docs,
+
+        // Core Configurations
+        jwtCfg: jwtCfg,
+        cors: corsOptions,
+        iceServers: iceServers,
+        test_ice_servers: testStunTurn,
+        email: nodemailer.emailCfg.alert ? nodemailer.emailCfg : false,
+
+        // Security, Authorization, and User Management
+        oidc: OIDC.enabled ? OIDC : false,
+        host_protected: hostCfg.protected || hostCfg.user_auth ? hostCfg : false,
+        presenters: roomPresenters,
+        ip_whitelist: ipWhitelist.enabled ? ipWhitelist : false,
+        self_signed_certificate: isHttps,
         api_key_secret: api_key_secret,
-        use_self_signed_certificate: isHttps,
+
+        // Media and Connection Settings
         turn_enabled: turnServerEnabled,
         ip_lookup_enabled: IPLookupEnabled,
-        chatGPT_enabled: configChatGPT.enabled,
+
+        // Integrations
+        chatGPT_enabled: configChatGPT.enabled ? configChatGPT : false,
         slack_enabled: slackEnabled,
+        mattermost_enabled: mattermostCfg.enabled ? mattermostCfg : false,
+
+        // Monitoring and Logging
         sentry_enabled: sentryEnabled,
-        survey_enabled: surveyEnabled,
-        redirect_enabled: redirectEnabled,
-        survey_url: surveyURL,
-        redirect_url: redirectURL,
-        node_version: process.versions.node,
+        stats: statsData.enabled ? statsData : false,
+
+        // Ngrok Configuration
+        ngrok: ngrokEnabled
+            ? {
+                  enabled: ngrokEnabled,
+                  token: ngrokAuthToken,
+              }
+            : false,
+
+        // URLs for Redirection and Survey
+        survey: surveyEnabled ? surveyURL : false,
+        redirect: redirectEnabled ? redirectURL : false,
+
+        // Versions information
         app_version: packageJson.version,
+        node_version: process.versions.node,
     };
 }
 
@@ -953,11 +985,11 @@ io.sockets.on('connect', async (socket) => {
     });
 
     /**
-     * On peer diconnected
+     * On peer disconnected
      */
     socket.on('disconnect', async (reason) => {
+        removeIP(socket);
         for (let channel in socket.channels) {
-            removeIP(socket);
             await removePeerFrom(channel);
         }
         log.debug('[' + socket.id + '] disconnected', { reason: reason });
@@ -1875,36 +1907,36 @@ function getActiveRooms() {
  * @param {string} logMessage
  * @param {object} req
  * @param {object} hostCfg
- * @param {class} authHost
- * @param {object} roomList
+ * @param {object} peers
  * @param {string} roomId
  * @returns boolean true/false
  */
-function isAllowedRoomAccess(logMessage, req, hostCfg, authHost, peers, roomId) {
+function isAllowedRoomAccess(logMessage, req, hostCfg, peers, roomId) {
     const OIDCUserAuthenticated = OIDC.enabled && req.oidc.isAuthenticated();
     const hostUserAuthenticated = hostCfg.protected && hostCfg.authenticated;
-    const roomActive = authHost.isRoomActive();
     const roomExist = roomId in peers;
     const roomCount = Object.keys(peers).length;
 
-    log.debug(logMessage, {
-        OIDCUserEnabled: OIDC.enabled,
-        OIDCUserAuthenticated: OIDCUserAuthenticated,
-        hostUserAuthenticated: hostUserAuthenticated,
-        hostProtected: hostCfg.protected,
-        hostAuthenticated: hostCfg.authenticated,
-        roomActive: roomActive,
-        roomExist: roomExist,
-        roomCount: roomCount,
-        roomId: roomId,
-    });
-
     const allowRoomAccess =
         (!hostCfg.protected && !OIDC.enabled) || // No host protection and OIDC mode enabled (default)
-        OIDCUserAuthenticated || // User authenticated via OIDC
-        hostUserAuthenticated || // User authenticated via Login
+        (OIDCUserAuthenticated && roomExist) || // User authenticated via OIDC and room Exist
+        (hostUserAuthenticated && roomExist) || // User authenticated via Login and room Exist
         ((OIDCUserAuthenticated || hostUserAuthenticated) && roomCount === 0) || // User authenticated joins the first room
         roomExist; // User Or Guest join an existing Room
+
+    log.debug(logMessage, {
+        OIDCUserAuthenticated: OIDCUserAuthenticated,
+        hostUserAuthenticated: hostUserAuthenticated,
+        roomExist: roomExist,
+        roomCount: roomCount,
+        extraInfo: {
+            roomId: roomId,
+            OIDCUserEnabled: OIDC.enabled,
+            hostProtected: hostCfg.protected,
+            hostAuthenticated: hostCfg.authenticated,
+        },
+        allowRoomAccess: allowRoomAccess,
+    });
 
     return allowRoomAccess;
 }

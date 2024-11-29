@@ -15,7 +15,7 @@
  * @license For commercial use or closed source, contact us at license.mirotalk@gmail.com or purchase directly from CodeCanyon
  * @license CodeCanyon: https://codecanyon.net/item/mirotalk-p2p-webrtc-realtime-video-conferences/38376661
  * @author  Miroslav Pejic - miroslav.pejic.85@gmail.com
- * @version 1.3.75
+ * @version 1.3.94
  *
  */
 
@@ -86,6 +86,8 @@ const className = {
     heart: 'fas fa-heart',
     pip: 'fas fa-images',
     hideAll: 'fas fa-eye',
+    up: 'fas fa-chevron-up',
+    down: 'fas fa-chevron-down',
 };
 // https://fontawesome.com/search?o=r&m=free
 
@@ -231,31 +233,36 @@ const initVideoBtn = getId('initVideoBtn');
 const initAudioBtn = getId('initAudioBtn');
 const initScreenShareBtn = getId('initScreenShareBtn');
 const initVideoMirrorBtn = getId('initVideoMirrorBtn');
+const initUsernameEmojiButton = getId('initUsernameEmojiButton');
 const initVideoSelect = getId('initVideoSelect');
 const initMicrophoneSelect = getId('initMicrophoneSelect');
 const initSpeakerSelect = getId('initSpeakerSelect');
+const usernameEmoji = getId('usernameEmoji');
 
 // Buttons bar
 const buttonsBar = getId('buttonsBar');
-const bottomButtons = getId('bottomButtons');
 const shareRoomBtn = getId('shareRoomBtn');
-const hideMeBtn = getId('hideMeBtn');
-const videoBtn = getId('videoBtn');
-const swapCameraBtn = getId('swapCameraBtn');
-const audioBtn = getId('audioBtn');
-const screenShareBtn = getId('screenShareBtn');
 const recordStreamBtn = getId('recordStreamBtn');
 const fullScreenBtn = getId('fullScreenBtn');
 const chatRoomBtn = getId('chatRoomBtn');
 const captionBtn = getId('captionBtn');
 const roomEmojiPickerBtn = getId('roomEmojiPickerBtn');
-const myHandBtn = getId('myHandBtn');
 const whiteboardBtn = getId('whiteboardBtn');
 const snapshotRoomBtn = getId('snapshotRoomBtn');
 const fileShareBtn = getId('fileShareBtn');
 const documentPiPBtn = getId('documentPiPBtn');
 const mySettingsBtn = getId('mySettingsBtn');
 const aboutBtn = getId('aboutBtn');
+
+// Buttons bottom
+const bottomButtons = getId('bottomButtons');
+const toggleExtraBtn = getId('toggleExtraBtn');
+const audioBtn = getId('audioBtn');
+const videoBtn = getId('videoBtn');
+const swapCameraBtn = getId('swapCameraBtn');
+const hideMeBtn = getId('hideMeBtn');
+const screenShareBtn = getId('screenShareBtn');
+const myHandBtn = getId('myHandBtn');
 const leaveRoomBtn = getId('leaveRoomBtn');
 
 // Room Emoji Picker
@@ -582,6 +589,7 @@ let swBg = 'rgba(0, 0, 0, 0.7)'; // swAlert background color
 let callElapsedTime; // count time
 let mySessionTime; // conference session time
 let isDocumentOnFullScreen = false;
+let isToggleExtraBtnClicked = false;
 
 // peer
 let myPeerId; // This socket.id
@@ -766,6 +774,7 @@ function setButtonsToolTip() {
     // Init buttons
     setTippy(initScreenShareBtn, 'Toggle screen sharing', 'top');
     setTippy(initVideoMirrorBtn, 'Toggle video mirror', 'top');
+    setTippy(initUsernameEmojiButton, 'Toggle username emoji', 'top');
     // Main buttons
     refreshMainButtonsToolTipPlacement();
     // Chat room buttons
@@ -866,9 +875,9 @@ function refreshMainButtonsToolTipPlacement() {
     bottomButtonsPlacement = btnsBarSelect.options[btnsBarSelect.selectedIndex].value == 'vertical' ? 'top' : 'right';
 
     setTippy(shareRoomBtn, 'Share the Room', placement);
+    setTippy(hideMeBtn, 'Toggle hide myself from the room view', placement);
     setTippy(recordStreamBtn, 'Start recording', placement);
     setTippy(fullScreenBtn, 'View full screen', placement);
-    setTippy(chatRoomBtn, 'Open the chat', placement);
     setTippy(captionBtn, 'Open the caption', placement);
     setTippy(roomEmojiPickerBtn, 'Send reaction', placement);
     setTippy(whiteboardBtn, 'Open the whiteboard', placement);
@@ -878,11 +887,12 @@ function refreshMainButtonsToolTipPlacement() {
     setTippy(mySettingsBtn, 'Open the settings', placement);
     setTippy(aboutBtn, 'About this project', placement);
 
-    setTippy(hideMeBtn, 'Toggle hide myself from the room view', bottomButtonsPlacement);
+    setTippy(toggleExtraBtn, 'Toggle extra buttons', bottomButtonsPlacement);
     setTippy(audioBtn, useAudio ? 'Stop the audio' : 'My audio is disabled', bottomButtonsPlacement);
     setTippy(videoBtn, useVideo ? 'Stop the video' : 'My video is disabled', bottomButtonsPlacement);
     setTippy(screenShareBtn, 'Start screen sharing', bottomButtonsPlacement);
     setTippy(myHandBtn, 'Raise your hand', bottomButtonsPlacement);
+    setTippy(chatRoomBtn, 'Open the chat', bottomButtonsPlacement);
     setTippy(leaveRoomBtn, 'Leave this room', bottomButtonsPlacement);
 }
 
@@ -1258,7 +1268,8 @@ async function handleConnect() {
         }
         getHtmlElementsById();
         setButtonsToolTip();
-        manageLeftButtons();
+        handleUsernameEmojiPicker();
+        manageButtons();
         handleButtonsRule();
         setupMySettings();
         loadSettingsFromLocalStorage();
@@ -1447,10 +1458,11 @@ function handleButtonsRule() {
 async function whoAreYou() {
     console.log('11. Who are you?');
 
-    elemDisplay(loadingDiv, false);
     document.body.style.background = 'var(--body-bg)';
 
     if (myPeerName) {
+        elemDisplay(loadingDiv, false);
+
         myPeerName = filterXSS(myPeerName);
 
         console.log(`11.1 Check if ${myPeerName} exist in the room`, roomId);
@@ -1477,6 +1489,10 @@ async function whoAreYou() {
     };
     initVideoMirrorBtn.onclick = (e) => {
         toggleInitVideoMirror();
+    };
+    initUsernameEmojiButton.onclick = (e) => {
+        getId('usernameInput').value = '';
+        toggleUsernameEmoji();
     };
 
     await loadLocalStorage();
@@ -1512,13 +1528,16 @@ async function whoAreYou() {
         position: 'center',
         input: 'text',
         inputPlaceholder: 'Enter your email or name',
-        inputAttributes: { maxlength: 32 },
+        inputAttributes: { maxlength: 32, id: 'usernameInput' },
         inputValue: window.localStorage.peer_name ? window.localStorage.peer_name : '',
         html: initUser, // inject html
         confirmButtonText: `Join meeting`,
         customClass: { popup: 'init-modal-size' },
         showClass: { popup: 'animate__animated animate__fadeInDown' },
         hideClass: { popup: 'animate__animated animate__fadeOutUp' },
+        willOpen: () => {
+            elemDisplay(loadingDiv, false);
+        },
         inputValidator: async (value) => {
             if (!value) return 'Please enter your email or name';
             // Long name
@@ -1537,6 +1556,10 @@ async function whoAreYou() {
             if (await checkUserName()) {
                 return 'Username is already in use!';
             } else {
+                // Hide username emoji
+                if (!usernameEmoji.classList.contains('hidden')) {
+                    usernameEmoji.classList.add('hidden');
+                }
                 window.localStorage.peer_name = myPeerName;
                 whoAreYouJoin();
             }
@@ -4417,26 +4440,30 @@ function refreshMyAudioStatus(localAudioMediaStream) {
 /**
  * Handle WebRTC left buttons
  */
-function manageLeftButtons() {
+function manageButtons() {
+    // Buttons bar
     setShareRoomBtn();
-    setHideMeButton();
-    setAudioBtn();
-    setVideoBtn();
-    setSwapCameraBtn();
-    setScreenShareBtn();
     setRecordStreamBtn();
+    setScreenShareBtn();
     setFullScreenBtn();
     setChatRoomBtn();
     setCaptionRoomBtn();
     setRoomEmojiButton();
     setChatEmojiBtn();
-    setMyHandBtn();
     setMyWhiteboardBtn();
     setSnapshotRoomBtn();
     setMyFileShareBtn();
     setDocumentPiPBtn();
     setMySettingsBtn();
     setAboutBtn();
+
+    // Buttons bottom
+    setToggleExtraButtons();
+    setAudioBtn();
+    setVideoBtn();
+    setSwapCameraBtn();
+    setHideMeButton();
+    setMyHandBtn();
     setLeaveRoomBtn();
 }
 
@@ -4460,6 +4487,39 @@ function setHideMeButton() {
         isHideMeActive = !isHideMeActive;
         handleHideMe(isHideMeActive);
     });
+}
+
+/**
+ * Toggle extra buttons
+ */
+function setToggleExtraButtons() {
+    toggleExtraBtn.addEventListener('click', () => {
+        toggleExtraButtons();
+        if (!isMobileDevice) {
+            isToggleExtraBtnClicked = true;
+            setTimeout(() => {
+                isToggleExtraBtnClicked = false;
+            }, 2000);
+        }
+    });
+    toggleExtraBtn.addEventListener('mouseover', () => {
+        if (isToggleExtraBtnClicked || isMobileDevice) return;
+        if (buttonsBar.style.display === 'none') {
+            toggleExtraButtons();
+        }
+    });
+}
+
+/**
+ * Toggle extra buttons
+ */
+function toggleExtraButtons() {
+    const isButtonsBarHidden = buttonsBar.style.display === 'none' || buttonsBar.style.display === '';
+    const displayValue = isButtonsBarHidden ? 'flex' : 'none';
+    const cName = isButtonsBarHidden ? className.up : className.down;
+
+    elemDisplay(buttonsBar, isButtonsBarHidden, displayValue);
+    toggleExtraBtn.className = cName;
 }
 
 /**
@@ -4558,7 +4618,13 @@ function setRecordStreamBtn() {
  * Full screen button click event
  */
 function setFullScreenBtn() {
-    if (browserName != 'Safari') {
+    const fsSupported =
+        document.fullscreenEnabled ||
+        document.webkitFullscreenEnabled ||
+        document.mozFullScreenEnabled ||
+        document.msFullscreenEnabled;
+
+    if (fsSupported) {
         // detect esc from full screen mode
         document.addEventListener('fullscreenchange', (e) => {
             let fullscreenElement = document.fullscreenElement;
@@ -5670,6 +5736,30 @@ async function handleLocalCameraMirror() {
 }
 
 /**
+ * Toggle username emoji
+ */
+function toggleUsernameEmoji() {
+    usernameEmoji.classList.toggle('hidden');
+}
+
+/**
+ * Handle username emoji picker
+ */
+function handleUsernameEmojiPicker() {
+    const pickerOptions = {
+        theme: 'dark',
+        onEmojiSelect: addEmojiToUsername,
+    };
+    const emojiUsernamePicker = new EmojiMart.Picker(pickerOptions);
+    usernameEmoji.appendChild(emojiUsernamePicker);
+
+    function addEmojiToUsername(data) {
+        getId('usernameInput').value += data.native;
+        toggleUsernameEmoji();
+    }
+}
+
+/**
  * Toggle vide mirror
  */
 function toggleInitVideoMirror() {
@@ -5806,8 +5896,8 @@ async function getAudioConstraints() {
         constraints = {
             audio: {
                 autoGainControl: switchAutoGainControl.checked,
-                echoCancellation: switchNoiseSuppression.checked,
-                noiseSuppression: switchEchoCancellation.checked,
+                echoCancellation: switchEchoCancellation.checked,
+                noiseSuppression: switchNoiseSuppression.checked,
                 sampleRate: parseInt(sampleRateSelect.value),
                 sampleSize: parseInt(sampleSizeSelect.value),
                 channelCount: parseInt(channelCountSelect.value),
@@ -5952,7 +6042,8 @@ function showButtonsBarAndMenu() {
     )
         return;
     toggleClassElements('navbar', 'block');
-    elemDisplay(buttonsBar, true, 'flex');
+    //elemDisplay(buttonsBar, true, 'flex');
+    toggleExtraBtn.className = className.down;
     elemDisplay(bottomButtons, true, 'flex');
     isButtonsVisible = true;
 }
@@ -5963,6 +6054,7 @@ function showButtonsBarAndMenu() {
 function checkButtonsBarAndMenu() {
     if (!isButtonsBarOver) {
         toggleClassElements('navbar', 'none');
+        toggleExtraBtn.className = className.up;
         elemDisplay(buttonsBar, false);
         elemDisplay(bottomButtons, false);
         isButtonsVisible = false;
@@ -7138,10 +7230,17 @@ function showChatRoomDraggable() {
         elemDisplay(bottomButtons, false);
         isButtonsVisible = false;
     }
+    //chatLeftCenter();
+    chatCenter();
+
     chatRoomBtn.className = className.chatOff;
-    chatLeftCenter();
     isChatRoomVisible = true;
-    setTippy(chatRoomBtn, 'Close the chat', placement);
+
+    if (isDesktopDevice && canBePinned()) {
+        toggleChatPin();
+    }
+
+    setTippy(chatRoomBtn, 'Close the chat', bottomButtonsPlacement);
 }
 
 /**
@@ -7154,9 +7253,15 @@ function showCaptionDraggable() {
         elemDisplay(bottomButtons, false);
         isButtonsVisible = false;
     }
+    //captionRightCenter();
+    captionCenter();
     captionBtn.className = 'far fa-closed-captioning';
-    captionRightCenter();
     isCaptionBoxVisible = true;
+
+    if (isDesktopDevice && canBePinned()) {
+        toggleCaptionPin();
+    }
+
     setTippy(captionBtn, 'Close the caption', placement);
 }
 
@@ -7206,9 +7311,24 @@ function chatMinimize() {
  */
 function chatCenter() {
     if (!isChatPinned) {
+        msgerDraggable.style.position = 'fixed';
+        msgerDraggable.style.display = 'flex';
         msgerDraggable.style.top = '50%';
         msgerDraggable.style.left = '50%';
+        msgerDraggable.style.transform = 'translate(-50%, -50%)';
+        msgerDraggable.style.webkitTransform = 'translate(-50%, -50%)';
+        msgerDraggable.style.mozTransform = 'translate(-50%, -50%)';
     }
+}
+
+/**
+ * Check if the element can be pinned based of viewport size
+ * @returns boolean
+ */
+function canBePinned() {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    return viewportWidth >= 1024 && viewportHeight >= 768;
 }
 
 /**
@@ -7244,8 +7364,9 @@ function chatUnpin() {
     setSP('--msger-height', '680px');
     elemDisplay(msgerMinBtn, false);
     buttons.chat.showMaxBtn && elemDisplay(msgerMaxBtn, true);
-    chatLeftCenter();
     isChatPinned = false;
+    //chatLeftCenter();
+    chatCenter();
     setColor(msgerTogglePin, 'white');
     resizeVideoMedia();
     msgerDraggable.style.resize = 'both';
@@ -7313,8 +7434,13 @@ function captionMinimize() {
  */
 function captionCenter() {
     if (!isCaptionPinned) {
+        captionDraggable.style.position = 'fixed';
+        captionDraggable.style.display = 'flex';
         captionDraggable.style.top = '50%';
         captionDraggable.style.left = '50%';
+        captionDraggable.style.transform = 'translate(-50%, -50%)';
+        captionDraggable.style.webkitTransform = 'translate(-50%, -50%)';
+        captionDraggable.style.mozTransform = 'translate(-50%, -50%)';
     }
 }
 
@@ -7351,8 +7477,9 @@ function captionUnpin() {
     setSP('--caption-height', '680px');
     elemDisplay(captionMinBtn, false);
     buttons.caption.showMaxBtn && elemDisplay(captionMaxBtn, true);
-    captionRightCenter();
     isCaptionPinned = false;
+    //captionRightCenter();
+    captionCenter();
     setColor(captionTogglePin, 'white');
     resizeVideoMedia();
     captionDraggable.style.resize = 'both';
@@ -7458,7 +7585,7 @@ function hideChatRoomAndEmojiPicker() {
     chatRoomBtn.className = className.chatOn;
     isChatRoomVisible = false;
     isChatEmojiVisible = false;
-    setTippy(chatRoomBtn, 'Open the chat', placement);
+    setTippy(chatRoomBtn, 'Open the chat', bottomButtonsPlacement);
 }
 
 /**
@@ -10294,6 +10421,24 @@ function sendVideoUrl(peer_id = null) {
             emitVideoPlayer('open', config);
         }
     });
+
+    // Take URL from clipboard ex:
+    // https://www.youtube.com/watch?v=1ZYbU82GVz4
+
+    navigator.clipboard
+        .readText()
+        .then((clipboardText) => {
+            if (!clipboardText) return false;
+            const sanitizedText = filterXSS(clipboardText);
+            const inputElement = Swal.getInput();
+            if (isVideoTypeSupported(sanitizedText) && inputElement) {
+                inputElement.value = sanitizedText;
+            }
+            return false;
+        })
+        .catch(() => {
+            return false;
+        });
 }
 
 /**
@@ -10527,7 +10672,7 @@ function showAbout() {
     Swal.fire({
         background: swBg,
         position: 'center',
-        title: '<strong>WebRTC P2P v1.3.75</strong>',
+        title: '<strong>WebRTC P2P v1.3.94</strong>',
         imageAlt: 'mirotalk-about',
         imageUrl: images.about,
         customClass: { image: 'img-about' },

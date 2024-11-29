@@ -68,6 +68,7 @@
 -   Right-click options on video elements for additional controls.
 -   Direct peer-to-peer connections for low-latency communication through WebRTC.
 -   Supports [REST API](app/api/README.md) (Application Programming Interface).
+-   Integration with [Mattermost](https://mattermost.com/) for enhanced communication.
 -   Integration with [Slack](https://api.slack.com/apps/) for enhanced communication.
 -   Utilizes [Sentry](https://sentry.io/) for error reporting.
 -   And much more...
@@ -159,7 +160,7 @@ To embed a meeting within `your service or app` using an iframe, you can use the
 <details open>
 <summary>Quick start</summary>
 
-<br/>
+![nodejs](public/images/nodejs.png)
 
 -   Before running MiroTalk P2P, ensure you have `Node.js` installed. This project has been tested with Node versions [12.X](https://nodejs.org/en/blog/release/v12.22.1/), [14.X](https://nodejs.org/en/blog/release/v14.17.5/), [16.X](https://nodejs.org/en/blog/release/v16.15.1/) and [18.x](https://nodejs.org/en/download).
 
@@ -191,6 +192,10 @@ $ npm start
 -   Install [docker engine](https://docs.docker.com/engine/install/) and [docker compose](https://docs.docker.com/compose/install/)
 
 ```bash
+# clone this repo
+$ git clone https://github.com/miroslavpejic85/mirotalk.git
+# go to mirotalk dir
+$ cd mirotalk
 # copy .env.template to .env (edit it according to your needs)
 $ cp .env.template .env
 # Copy docker-compose.template.yml in docker-compose.yml (edit it according to your needs)
